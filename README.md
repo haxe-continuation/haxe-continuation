@@ -37,7 +37,7 @@ functions.
       }
     }
 
-See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx to see more samples.
+See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx for more samples.
 
 ## License
 
