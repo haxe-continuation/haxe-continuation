@@ -21,7 +21,6 @@ class Sample
     {
       trace("Handler without continuation.");
     });
-    //
   }
   
 }
