@@ -37,6 +37,8 @@ functions.
       }
     }
 
+See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx to see more samples.
+
 ## License
 
 Copyright (c) 2012, 杨博 (Yang Bo)
