@@ -3,6 +3,40 @@ haxe-continuation
 
 Enable continuation in Haxe.
 
+## Installation
+
+    haxelib install continuation
+
+## Usage
+
+If a function's last parameter is a callback function, it is async function. 
+Use `Continuation.cpsFunction` to write a async function.
+In `Continuation.cpsFunction`, `async` is a keyword to invoke other async
+functions.
+
+    import com.dongxiguo.continuation.Continuation;
+    class Sample 
+    {
+      static var sleepOneSecond = callback(haxe.Timer.delay, _, 1000);
+      public static function main() 
+      {
+        Continuation.cpsFunction(function asyncTest():Void
+        {
+          trace("Start continuation.");
+          for (i in 0...10)
+          {
+            async(sleepOneSecond);
+            trace("Run sleepOneSecond " + i + " times.");
+          }
+          trace("Continuation is done.");
+        });
+        asyncTest(function()
+        {
+          trace("Handler without continuation.");
+        });
+      }
+    }
+
 ## License
 
 Copyright (c) 2012, 杨博 (Yang Bo)
