@@ -223,7 +223,11 @@ class Continuation
                         },
                         transform(e, function(eResult)
                         {
-                          return macro $continueIdent();
+                          return
+                          {
+                            pos: origin.pos,
+                            expr: EBlock(eResult.concat([ macro $continueIdent()]))
+                          };
                         })
                       ])
                     },

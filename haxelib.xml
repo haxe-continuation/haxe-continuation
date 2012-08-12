@@ -4,5 +4,5 @@
     <tag v="utility"/>
     <tag v="continuation"/>
     <description>Enable continuation in Haxe</description>
-    <version name="0.1.1">Initial release, everything is working correctly</version>
+    <version name="0.1.2">Fix while loop.</version>
 </project>

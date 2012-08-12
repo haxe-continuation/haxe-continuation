@@ -1,3 +1,5 @@
 release.zip
 bin
+*.swn
+*.swo
 *.swp
