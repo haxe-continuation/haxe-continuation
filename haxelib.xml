@@ -1,0 +1,8 @@
+<project name="continuation" url="https://github.com/Atry/haxe-continuation" license="BSD">
+    <user name="Atry"/>
+    <tag v="cross"/>
+    <tag v="utility"/>
+    <tag v="continuation"/>
+    <description>Enable continuation in Haxe</description>
+    <version name="0.1.1">Initial release, everything is working correctly</version>
+</project>

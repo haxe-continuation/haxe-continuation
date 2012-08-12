@@ -1,0 +1,4 @@
+-cp .
+-js bin/TestContinuation.js
+-main tests.TestContinuation
+--dead-code-elimination
