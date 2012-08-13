@@ -447,6 +447,7 @@ class ContinuationDetail
               ]);
           });
       }
+      #if !haxe3
       case EType(e, field):
       {
         return transform(
@@ -462,6 +463,7 @@ class ContinuationDetail
               ]);
           });
       }
+      #end
       case ETry(e, catches):
       {
         var endTryName = "__endTry_" + seed++;
