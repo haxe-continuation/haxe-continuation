@@ -4,5 +4,7 @@
     <tag v="utility"/>
     <tag v="continuation"/>
     <description>Enable continuation in Haxe</description>
-    <version name="0.1.4">Fix Continuation.cpsByMeta</version>
+    <version name="0.2.0">
+      Use the syntax from discussion at http://haxe.org/forum/thread/3395
+    </version>
 </project>
