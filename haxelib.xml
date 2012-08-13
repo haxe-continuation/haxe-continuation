@@ -3,8 +3,15 @@
     <tag v="cross"/>
     <tag v="utility"/>
     <tag v="continuation"/>
+    <tag v="js"/>
+    <tag v="javascript"/>
+    <tag v="nme"/>
+    <tag v="cpp"/>
+    <tag v="flash"/>
+    <tag v="neko"/>
+    <tag v="php"/>
     <description>Enable continuation in Haxe</description>
-    <version name="0.2.0">
-      Use the syntax from discussion at http://haxe.org/forum/thread/3395
+    <version name="0.2.1">
+      compiles with -D haxe3
     </version>
 </project>
