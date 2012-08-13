@@ -5,14 +5,26 @@ Enable continuation in Haxe.
 
 ## Installation
 
+I have upload **haxe-continuation** to haxelib. To install, type following
+command in shell:
+
     haxelib install continuation
+
+Now you can use continuation in your code:
+
+    haxe -lib continuation -main Your.hx -js your-output.js
 
 ## Usage
 
-If a function's last parameter is a callback function, it is async function. 
-Use `Continuation.cpsFunction` to write a async function.
-In `Continuation.cpsFunction`, `async` is a keyword to invoke other async
-functions.
+If a function's last parameter is a callback function, it is an
+*asynchronous function*. **haxe-continuation** enable you to write an
+asynchronous function in *continuation-passing style (CPS)*.
+
+You can use `Continuation.cpsFunction` to write such a CPS asynchronous
+function. In `Continuation.cpsFunction`, `async` is a keyword to invoke other
+async functions. In `async`, You need not to explicitly pass a callback
+function. Instead, the code after `async` will be captured as the callback
+function used by the callee.
 
     import com.dongxiguo.continuation.Continuation;
     class Sample 
@@ -37,7 +49,8 @@ functions.
       }
     }
 
-See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx for more samples.
+See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx
+for more examples.
 
 ## License
 
