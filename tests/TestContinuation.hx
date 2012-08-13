@@ -18,8 +18,6 @@ class TestContinuation
     return a + b;
   }
   
-  //@:extern static inline var async:Dynamic = null;
-  
   static function xx(xxx):Int return 1
   
   @:macro static function macroThrow(e:Expr):Expr
@@ -40,19 +38,10 @@ class TestContinuation
     return n + 1;
   }
   
-  /*
-  // This does not work, and I don't know why.
   @cps static function foo(n:Int):Int
   {
-    return async(Main.read, 3) * 4;
-  }
-  */
-  
-  static function foo(n:Int, h:Int->Void):Void h.cps(
-  {
     return async(read, 3) * 4;
-  })
-  
+  }
   
   static function bar(n:Int, s:String, f:Float, handler:Int->Void):Void
   {

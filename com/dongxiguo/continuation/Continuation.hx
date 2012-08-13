@@ -1042,6 +1042,7 @@ class Continuation
     {
       case EFunction(name, f):
       {
+        var originExpr = f.expr;
         return
         {
           pos: expr.pos,
@@ -1061,16 +1062,8 @@ class Continuation
                       TPath({ sub:null, params: [], pack: [], name: "Void" }))
                   }
                 ]),
-              expr: transform(
-                f.expr,
-                function(exprs: Array<Expr>):Expr
-                {
-                  return
-                  {
-                    pos: f.expr.pos,
-                    expr: EBlock(exprs.concat([macro (cast __return)()]))
-                  }
-                })
+              expr:
+                macro com.dongxiguo.continuation.Continuation.cps($originExpr)
             })
         };
       }
@@ -1082,9 +1075,9 @@ class Continuation
 
   }
   
-  @:macro public static function cps(handler:Expr, body:Expr):Expr
+  @:macro public static function cps(body:Expr):Expr
   {
-    var transformedBody = transform(
+    return transform(
       body,
       function(exprs: Array<Expr>):Expr
       {
@@ -1094,9 +1087,8 @@ class Continuation
           expr: EBlock(exprs.concat([macro (cast __return)()]))
         }
       });
-    return macro { var __return = $handler; $transformedBody; };
   }
-  
+
   @:macro public static function cpsByMeta(metaName:String):Array<Field>
   {
     var bf = Context.getBuildFields();
@@ -1122,16 +1114,9 @@ class Continuation
                   }
                 ]);
               f.ret = null;
-              f.expr = transform(
-                f.expr,
-                function(exprs: Array<Expr>):Expr
-                {
-                  return
-                  {
-                    pos: f.expr.pos,
-                    expr: EBlock(exprs.concat([macro (cast __return)()]))
-                  }
-                });
+              var originExpr = f.expr;
+              f.expr =
+                macro com.dongxiguo.continuation.Continuation.cps($originExpr);
               break;
             }
           }
