@@ -9,15 +9,15 @@ Enable continuation in Haxe.
 
 ## Usage
 
-If a function's last parameter is a callback function, it is an *async function*.
-**haxe-continuation** enable you to write an async function in
-*continuation-passing style (CPS)*.
+If a function's last parameter is a callback function, it is an
+*asynchronous function*. **haxe-continuation** enable you to write an
+synchronous function in *continuation-passing style (CPS)*.
 
-You can use `Continuation.cpsFunction` to write such a CPS async function.
-In `Continuation.cpsFunction`, `async` is a keyword to invoke other async
-functions. In `async`, You need not to explicitly pass a callback function.
-Instead, the code after `async` will be captured as the callback function
-used by the callee.
+You can use `Continuation.cpsFunction` to write such a CPS asynchronous
+function. In `Continuation.cpsFunction`, `async` is a keyword to invoke other
+async functions. In `async`, You need not to explicitly pass a callback
+function. Instead, the code after `async` will be captured as the callback
+function used by the callee.
 
     import com.dongxiguo.continuation.Continuation;
     class Sample 
