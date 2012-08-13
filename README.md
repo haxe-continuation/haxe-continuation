@@ -5,6 +5,9 @@ Enable continuation in Haxe.
 
 ## Installation
 
+I have upload **haxe-continuation** to haxelib. To install, type following
+command in shell:
+
     haxelib install continuation
 
 ## Usage
@@ -42,7 +45,8 @@ function used by the callee.
       }
     }
 
-See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx for more examples.
+See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx
+for more examples.
 
 ## License
 
