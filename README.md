@@ -10,7 +10,7 @@ Enable continuation in Haxe.
 ## Usage
 
 If a function's last parameter is a callback function, it is an *async function*.
-**haxe-continuation** is designed to enable to write an async function in
+**haxe-continuation** enable you to write an async function in
 *continuation-passing style (CPS)*.
 
 You can use `Continuation.cpsFunction` to write such a CPS async function.
