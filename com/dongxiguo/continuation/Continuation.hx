@@ -41,6 +41,11 @@ using Lambda;
  */
 class Continuation 
 {
+  /**
+   * Convert a function to CPS function.
+   *
+   * In converted function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
+   */
   @:macro public static function cpsFunction(expr:Expr):Expr
   {
     switch (expr.expr)
@@ -92,6 +97,11 @@ class Continuation
     }
   }
 
+  /**
+   * When add <code>@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("metaName"))</code> in front of a class, any method with same metadata name from <code>metaName</code> in that class will be converted to CPS function.
+   *
+   * In converted function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
+   */
   @:noUsing @:macro public static function cpsByMeta(metaName:String):Array<Field>
   {
     var bf = Context.getBuildFields();
@@ -148,10 +158,7 @@ class Continuation
 
 }
 
-/**
- * @private
- * For internal use only, don't access it immediately.
- */
+// For internal use only, don't access it immediately.
 class ContinuationDetail
 {
   #if macro
