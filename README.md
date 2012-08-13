@@ -37,7 +37,7 @@ function used by the callee.
           trace("Start continuation.");
           for (i in 0...10)
           {
-            async(sleepOneSecond);
+            sleepOneSecond().async();
             trace("Run sleepOneSecond " + i + " times.");
           }
           trace("Continuation is done.");
