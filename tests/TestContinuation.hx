@@ -15,14 +15,6 @@ class TestContinuation
   }
   
   static function xx(xxx):Int return 1
-  
-  @:macro static function macroThrow(e:Expr):Expr
-  {
-    trace("xxx");
-    throw "xxx";
-    return null;
-  }
-  
 
   static function read(n:Int, handler:Int -> Void):Void
   {
