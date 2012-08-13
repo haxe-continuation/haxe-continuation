@@ -9,8 +9,10 @@ Enable continuation in Haxe.
 
 ## Usage
 
-If a function's last parameter is a callback function, it is async function. 
-Use `Continuation.cpsFunction` to write a async function.
+If a function's last parameter is a callback function, it is an *async function*.
+An async function can be written in *continuation-passing style (CPS)*.
+
+You can use `Continuation.cpsFunction` to write such an CPS async function.
 In `Continuation.cpsFunction`, `async` is a keyword to invoke other async
 functions.
 
