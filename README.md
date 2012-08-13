@@ -18,7 +18,7 @@ Now you can use continuation in your code:
 
 If a function's last parameter is a callback function, it is an
 *asynchronous function*. **haxe-continuation** enable you to write an
-synchronous function in *continuation-passing style (CPS)*.
+asynchronous function in *continuation-passing style (CPS)*.
 
 You can use `Continuation.cpsFunction` to write such a CPS asynchronous
 function. In `Continuation.cpsFunction`, `async` is a keyword to invoke other
