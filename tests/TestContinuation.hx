@@ -1,15 +1,11 @@
 package tests;
 
 using com.dongxiguo.continuation.Continuation;
-#if macro
-import haxe.macro.Expr;
-#end
+
 /**
  * @author 杨博
  */
-#if !macro
-  @:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
-#end
+@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
 class TestContinuation 
 {
   static function good(a, b):Int
