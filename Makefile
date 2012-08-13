@@ -1,6 +1,10 @@
 all: release.zip
 
-release.zip: haxelib.xml LICENSE com/dongxiguo/continuation/Continuation.hx
+release.zip: \
+haxelib.xml \
+haxedoc.xml \
+LICENSE \
+com/dongxiguo/continuation/Continuation.hx
 	 zip -u $@ $^
 
 clean:
@@ -14,31 +18,34 @@ bin/TestContinuation.n: \
 com/dongxiguo/continuation/Continuation.hx \
 tests/TestContinuation.hx \
 | bin
-	haxe -cp . -neko $@ -main tests.TestContinuation
+	haxe -neko $@ -main tests.TestContinuation
 
 bin/TestContinuation.swf: \
 com/dongxiguo/continuation/Continuation.hx \
 tests/TestContinuation.hx \
 | bin
-	haxe -cp . -swf $@ -main tests.TestContinuation
+	haxe -swf $@ -main tests.TestContinuation
 
 bin/TestContinuation.js: \
 com/dongxiguo/continuation/Continuation.hx \
 tests/TestContinuation.hx \
 | bin
-	haxe -cp . -js $@ -main tests.TestContinuation
+	haxe -js $@ -main tests.TestContinuation
 
 bin/Sample.swf: \
 com/dongxiguo/continuation/Continuation.hx \
 tests/Sample.hx \
 | bin
-	haxe -cp . -swf $@ -main tests.Sample
+	haxe -swf $@ -main tests.Sample
 
 bin/Sample.js: \
 com/dongxiguo/continuation/Continuation.hx \
 tests/Sample.hx \
 | bin
-	haxe -cp . -js $@ -main tests.Sample
+	haxe -js $@ -main tests.Sample
+
+haxedoc.xml: com/dongxiguo/continuation/Continuation.hx
+	haxe -xml $@ $< --dead-code-elimination
 
 bin:
 	mkdir $@
