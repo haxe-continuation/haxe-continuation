@@ -10,6 +10,10 @@ command in shell:
 
     haxelib install continuation
 
+Now you can use continuation in your code:
+
+    haxe -lib continuation -main Your.hx -js your-output.js
+
 ## Usage
 
 If a function's last parameter is a callback function, it is an
