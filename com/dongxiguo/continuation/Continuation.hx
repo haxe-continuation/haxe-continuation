@@ -417,11 +417,6 @@ class Continuation
                         };
                       }
                     }
-                    return
-                    {
-                      pos: origin.pos,
-                      expr: ECall(endTryIdent, catchResult)
-                    };
                   }),
                 type: catchBody.type,
                 name: catchBody.name
