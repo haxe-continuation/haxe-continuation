@@ -370,7 +370,7 @@ class Continuation
               [
                 {
                   name: tryResultName,
-                  opt: false,
+                  opt: true,
                   type: null,
                   value: null
                 }
@@ -387,10 +387,41 @@ class Continuation
               {
                 expr: transform(
                   catchBody.expr,
-                  function(catchResults)
+                  function(catchResult)
                   {
-                    var catchResult = unpack(catchResults, catchBody.expr.pos);
-                    return macro $endTryIdent($catchResult);
+                    switch (catchResult.length)
+                    {
+                      case 1:
+                      {
+                        return
+                        {
+                          pos: catchBody.expr.pos,
+                          expr: ECall(
+                            endTryIdent,
+                            [
+                              {
+                                pos: catchBody.expr.pos,
+                                expr: ECast(
+                                  unpack(catchResult, catchBody.expr.pos),
+                                  null)
+                              }
+                            ])
+                        };
+                      }
+                      default:
+                      {
+                        return
+                        {
+                          pos: origin.pos,
+                          expr: ECall(endTryIdent, catchResult)
+                        };
+                      }
+                    }
+                    return
+                    {
+                      pos: origin.pos,
+                      expr: ECall(endTryIdent, catchResult)
+                    };
                   }),
                 type: catchBody.type,
                 name: catchBody.name
@@ -1123,7 +1154,7 @@ class Continuation
 
 class IteratorGetter
 {
-  @:extern public static inline function getIterator<T>(
+  public static inline function getIterator<T>(
     iterable:Iterable<T> = null,
     iterator:Iterator<T> = null):Iterator<T>
   {

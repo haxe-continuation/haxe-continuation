@@ -69,6 +69,8 @@ class TestContinuation
     
   }
   
+  static function dummy():Void {}
+  
 	static function main() 
 	{
     write(2, function(result)
@@ -97,16 +99,28 @@ class TestContinuation
     Continuation.cpsFunction(
       function testTry():Void
       {
+        try
+        {
+          dummy();
+        }
+        catch (x:Float)
+        {
+          trace("catch");
+          async(foo, async(read, 1));
+        }
         async(read,
           try
           {
             good(3, 2);
           }
-          catch(x:Int)
+          catch (x:Int)
           {
             async(foo, async(read, x));
           }
-          catch(x:String)
+          catch (x:Float)
+          {
+          }
+          catch (x:String)
           {
             async(read, 3);
           });
