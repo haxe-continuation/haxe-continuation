@@ -22,7 +22,7 @@ asynchronous function in *continuation-passing style (CPS)*.
 
 You can use `Continuation.cpsFunction` to write such a CPS asynchronous
 function. In `Continuation.cpsFunction`, `async` is a keyword to invoke other
-async functions. In `async`, You need not to explicitly pass a callback
+async functions. With a `.async()` postfix, you need not to explicitly pass a callback
 function. Instead, the code after `async` will be captured as the callback
 function used by the callee.
 
