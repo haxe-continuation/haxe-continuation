@@ -53,8 +53,8 @@ class TestContinuation
   
   static function dummy():Void {}
   
-	static function main() 
-	{
+  static function main() 
+  {
     baz(4, function(result)
     {
       trace(result);
@@ -226,7 +226,7 @@ class TestContinuation
       }
       while (true);
     });
-	}
+  }
   
   
 }
