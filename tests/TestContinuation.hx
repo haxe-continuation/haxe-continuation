@@ -24,7 +24,7 @@ class TestContinuation
   {
     return n + 1;
   }
-  @cps static function void(n:Int):Void
+  @cps static function void1(n:Int):Void
   {
     return;
   }
@@ -36,7 +36,7 @@ class TestContinuation
       return hang0().async();
       Any.code.after._return_.will.be.gone();
     }
-    return void(n).async();
+    return void1(n).async();
   }
   
   @cps static function baz(n:Int):Int
