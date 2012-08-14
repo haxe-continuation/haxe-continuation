@@ -1,5 +1,6 @@
 <project name="continuation" url="https://github.com/Atry/haxe-continuation" license="BSD">
     <user name="Atry"/>
+    <tag v="cps"/>
     <tag v="cross"/>
     <tag v="utility"/>
     <tag v="continuation"/>
@@ -11,7 +12,7 @@
     <tag v="neko"/>
     <tag v="php"/>
     <description>Enable continuation in Haxe</description>
-    <version name="0.2.1">
-      compiles with -D haxe3
+    <version name="0.2.2">
+      Fix return expression without return value.
     </version>
 </project>
