@@ -27,9 +27,12 @@ function. Instead, the code after `async` will be captured as the callback
 function used by the callee.
 
     import com.dongxiguo.continuation.Continuation;
-    class Sample 
+    class Sample
     {
-      static var sleepOneSecond = callback(haxe.Timer.delay, _, 1000);
+      static function sleepOneSecond(handler:Void->Void):Void
+      {
+        haxe.Timer.delay(handler, 1000);
+      }
       public static function main() 
       {
         Continuation.cpsFunction(function asyncTest():Void
@@ -42,6 +45,36 @@ function used by the callee.
           }
           trace("Continuation is done.");
         });
+        asyncTest(function()
+        {
+          trace("Handler without continuation.");
+        });
+      }
+    }
+
+Another way to write a CPS function is put `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))`
+before a class, and mark the CPS functions in that class as `@cps`:
+
+    import com.dongxiguo.continuation.Continuation;
+    @:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
+    class Sample2
+    {
+      static function sleepOneSecond(handler:Void->Void):Void
+      {
+        haxe.Timer.delay(handler, 1000);
+      }
+      @cps static function asyncTest():Void
+      {
+        trace("Start continuation.");
+        for (i in 0...10)
+        {
+          sleepOneSecond().async();
+          trace("Run sleepOneSecond " + i + " times.");
+        }
+        trace("Continuation is done.");
+      }
+      public static function main() 
+      {
         asyncTest(function()
         {
           trace("Handler without continuation.");
