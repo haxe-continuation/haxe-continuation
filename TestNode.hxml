@@ -1,0 +1,5 @@
+-cp .
+-lib nodejs
+-js bin/TestNode.js
+-main tests.TestNode
+--dead-code-elimination

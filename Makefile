@@ -32,6 +32,12 @@ tests/TestContinuation.hx \
 | bin
 	haxe -js $@ -main tests.TestContinuation
 
+bin/TestNode.js: \
+com/dongxiguo/continuation/Continuation.hx \
+tests/TestNode.hx \
+| bin
+	haxe -js $@ -main tests.TestNode -lib nodejs
+
 bin/Sample_java: \
 com/dongxiguo/continuation/Continuation.hx \
 tests/Sample.hx \
