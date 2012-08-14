@@ -12,7 +12,8 @@ clean:
 
 test: \
 bin/TestContinuation.n bin/TestContinuation.swf bin/TestContinuation.js \
-bin/Sample.swf bin/Sample.js bin/Sample_cs bin/Sample_java
+bin/Sample.swf bin/Sample.js bin/Sample_cs bin/Sample_java \
+bin/TestNode.js
 
 bin/TestContinuation.n: \
 com/dongxiguo/continuation/Continuation.hx \
