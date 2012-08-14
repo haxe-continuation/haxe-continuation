@@ -291,7 +291,15 @@ class ContinuationDetail
           pos: origin.pos,
           expr: EConst(CIdent(breakName))
         };
-        
+        var doBody = transform(e,
+          function(eResult)
+          {
+            return
+            {
+              pos: origin.pos,
+              expr: EBlock(eResult.concat([ macro $continueIdent()]))
+            };
+          });
         var continueBody = transform(
           econd,
           function(econdResult)
@@ -305,62 +313,32 @@ class ContinuationDetail
                 macro $breakIdent())
             };
           });
-        return
+        var breakBody = rest([]);
+        var startIdent = normalWhile ? macro $continueIdent : macro __do;
+        return macro
         {
-          pos: origin.pos,
-          expr: EBlock(
-            [
-              {
-                pos: origin.pos,
-                expr: EFunction(
-                  breakName,
-                  {
-                    expr: rest([]),
-                    ret: null,
-                    params: [],
-                    args: []
-                  })
-              },
-              (macro var $continueName = null),
-              {
-                pos: origin.pos,
-                expr: EFunction(
-                  "__do",
-                  {
-                    expr:
-                    {
-                      pos: origin.pos,
-                      expr: EBlock(
-                      [
-                        macro inline function __continue():Void
-                        {
-                          return $continueIdent();
-                        },
-                        macro inline function __break():Void
-                        {
-                          return $breakIdent();
-                        },
-                        transform(e, function(eResult)
-                        {
-                          return
-                          {
-                            pos: origin.pos,
-                            expr: EBlock(eResult.concat([ macro $continueIdent()]))
-                          };
-                        })
-                      ])
-                    },
-                    ret: null,
-                    params: [],
-                    args: []
-                  })
-              },
-              macro $continueIdent = function()
-              {
-                $continueBody;
-              },
-              normalWhile ? macro $continueIdent() : macro __do()
-            ])
+          function $breakName():Void
+          {
+            $breakBody;
+          }
+          var $continueName = null;
+          inline function __do()
+          {
+            inline function __break()
+            {
+              $breakIdent();
+            }
+            inline function __continue()
+            {
+              $continueIdent();
+            }
+            $doBody;
+          }
+          $continueIdent = function():Void
+          {
+            $continueBody;
+          }
+          $startIdent();
         };
       }
       case EVars(originVars):
