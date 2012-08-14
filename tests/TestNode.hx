@@ -29,7 +29,7 @@ class TestNode
   }
   
   /**
-   * Create directory "TestNode", and concurrently put 5 files in it.
+   * Create a directory named "TestNode", and concurrently put 5 files into it.
    */
   @cps static function startTest():Void
   {
