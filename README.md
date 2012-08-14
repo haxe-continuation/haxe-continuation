@@ -1,26 +1,34 @@
 haxe-continuation
 =================
 
-Enable continuation in Haxe.
+If a function's last parameter is a callback function, it is an
+*asynchronous function*. **haxe-continuation** enable you to write an
+asynchronous function in *continuation-passing style (CPS)*. That means
+you can write code runs like *multi-threading* without platform
+multi-threading support.
 
 ## Installation
 
-I have upload **haxe-continuation** to haxelib. To install, type following
+I have upload haxe-continuation to haxelib. To install, type following
 command in shell:
 
     haxelib install continuation
 
 Now you can use continuation in your code:
 
+Output to JavaScript:
+
     haxe -lib continuation -main Your.hx -js your-output.js
+
+, or output to SWF:
+
+    haxe -lib continuation -main Your.hx -swf your-output.swf
+
+, or output to any other platform that Haxe supports.
 
 ## Usage
 
-If a function's last parameter is a callback function, it is an
-*asynchronous function*. **haxe-continuation** enable you to write an
-asynchronous function in *continuation-passing style (CPS)*.
-
-You can use `Continuation.cpsFunction` to write such a CPS asynchronous
+You can use `Continuation.cpsFunction` to write a CPS asynchronous
 function. In `Continuation.cpsFunction`, `async` is a keyword to invoke other
 async functions. With a `.async()` postfix, you need not to explicitly pass a callback
 function. Instead, the code after `async` will be captured as the callback
