@@ -85,6 +85,10 @@ before a class, and mark the CPS functions in that class as `@cps`:
 See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx
 for more examples.
 
+### Work with [hx-node](https://github.com/cloudshift/hx-node)
+
+Look at https://github.com/Atry/haxe-continuation/blob/master/tests/TestNode.hx, which create a directory named *TestNode*, and concurrently put 5 files into it.
+
 ## License
 
 Copyright (c) 2012, 杨博 (Yang Bo)
