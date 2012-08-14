@@ -683,6 +683,19 @@ class ContinuationDetail
       }
       case EReturn(returnExpr):
       {
+        if (returnExpr == null)
+        {
+          return
+          {
+            pos: origin.pos,
+            expr: ECall(
+              {
+                pos: origin.pos,
+                expr: EConst(CIdent("__return"))
+              },
+              [])
+          };
+        }
         switch (returnExpr.expr)
         {
           case ECall(e, originParams):

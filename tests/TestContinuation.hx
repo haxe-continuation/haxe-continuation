@@ -18,22 +18,49 @@ class TestContinuation
 
   static function read(n:Int, handler:Int -> Void):Void
   {
-    
   }
 
   @cps static function write(n:Int):Int
   {
     return n + 1;
   }
+  @cps static function void(n:Int):Void
+  {
+    return;
+  }
+  
+  @cps static function void2(n:Int):Void
+  {
+    if (false)
+    {
+      return hang0().async();
+      Any.code.after._return_.will.be.gone();
+    }
+    return void(n).async();
+  }
   
   @cps static function baz(n:Int):Int
   {
-    //return foo(n + 3).async();
+    if (false)
+    {
+      return hang1().async();
+      Any.code.after._return_.will.be.gone();
+    }
+    void2(3).async();
+    return foo(n + 3).async();
   }
+  
+  static inline function hang0(handler:Void->Void):Void {}
+  static inline function hang1<T>(handler:T->Void):Void {}
   
   @cps static function foo(n:Int):Int
   {
-    return read(3).async() * 4;
+    if (true)
+    {
+      return hang1().async();
+      Any.code.after._return_.will.be.gone();
+    }
+    return read(3).async() * 4 + hang1().async();
   }
   
   static function bar(n:Int, s:String, f:Float, handler:Int->Void):Void
