@@ -52,8 +52,8 @@ function used by the callee.
       }
     }
 
-Another way to write a CPS function is put `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))`
-before a class, and mark the CPS functions in that class as `@cps`:
+Another way to write a CPS function is putting `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))`
+before a class, and marking the CPS functions in that class as `@cps`:
 
     import com.dongxiguo.continuation.Continuation;
     @:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
