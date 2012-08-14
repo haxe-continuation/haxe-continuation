@@ -207,12 +207,17 @@ class ContinuationDetail
                 return
                 {
                   pos: eif.pos,
-                  expr: ECall(
+                  expr: EReturn( {
+                    
+                    expr: ECall(
                     {
                       pos: eif.pos,
                       expr: EConst(CIdent(endIfName))
                     },
-                    eifResult)
+                    eifResult),
+                    pos: eif.pos
+                  })
+                  
                 }
               }),
               transform(eelse, function(eelseResult)
@@ -224,12 +229,16 @@ class ContinuationDetail
                 return
                 {
                   pos: eelse.pos,
+                  expr: EReturn( {
+                    pos: eelse.pos,
+
                   expr: ECall(
                     {
                       pos: eelse.pos,
                       expr: EConst(CIdent(endIfName))
                     },
                     eelseResult)
+                  })
                 }                    
               })
               )
@@ -262,7 +271,13 @@ class ContinuationDetail
               endIfName,
               {
                 expr: rest(ifResultIdents),
-                ret: null,
+                ret: TPath(
+                  {
+                    sub: null,
+                    params: [],
+                    pack: [],
+                    name: "Void"
+                  }),
                 params: [],
                 args: endIfArgs
               })
@@ -301,8 +316,8 @@ class ContinuationDetail
               pos: origin.pos,
               expr: EIf(
                 unpack(econdResult, econd.pos),
-                macro __do(),
-                macro $breakIdent())
+                macro return __do(),
+                macro return $breakIdent())
             };
           });
         return
@@ -316,7 +331,13 @@ class ContinuationDetail
                   breakName,
                   {
                     expr: rest([]),
-                    ret: null,
+                    ret: TPath(
+                      {
+                        sub: null,
+                        params: [],
+                        pack: [],
+                        name: "Void"
+                      }),
                     params: [],
                     args: []
                   })
@@ -345,21 +366,30 @@ class ContinuationDetail
                           return
                           {
                             pos: origin.pos,
-                            expr: EBlock(eResult.concat([ macro $continueIdent()]))
+                            expr: EBlock(eResult.concat(
+                              [
+                                macro return $continueIdent()
+                              ]))
                           };
                         })
                       ])
                     },
-                    ret: null,
+                    ret: TPath(
+                      {
+                        sub: null,
+                        params: [],
+                        pack: [],
+                        name: "Void"
+                      }),
                     params: [],
                     args: []
                   })
               },
-              macro $continueIdent = function()
+              macro function $continueName()
               {
                 $continueBody;
               },
-              normalWhile ? macro $continueIdent() : macro __do()
+              normalWhile ? macro return $continueIdent() : macro return __do()
             ])
         };
       }
@@ -484,7 +514,13 @@ class ContinuationDetail
           expr: EFunction(
             endTryName,
             {
-              ret: null,
+              ret: TPath(
+                {
+                  sub: null,
+                  params: [],
+                  pack: [],
+                  name: "Void"
+                }),
               params: [],
               expr: rest([ tryResultIdent ]),
               args:
@@ -517,6 +553,9 @@ class ContinuationDetail
                         return
                         {
                           pos: catchBody.expr.pos,
+                          expr: EReturn(
+                          {
+                            pos: catchBody.expr.pos,
                           expr: ECall(
                             endTryIdent,
                             [
@@ -526,16 +565,20 @@ class ContinuationDetail
                                   unpack(catchResult, catchBody.expr.pos),
                                   null)
                               }
-                            ])
+                          ])})
                         };
                       }
                       default:
                       {
                         return
                         {
+                          pos: catchBody.expr.pos,
+                          expr: EReturn(
+                          {
+                        
                           pos: origin.pos,
                           expr: ECall(endTryIdent, catchResult)
-                        };
+                        })};
                       }
                     }
                   }),
@@ -553,8 +596,9 @@ class ContinuationDetail
           $transformedTry;
           if (__noException)
           {
-            $endTryIdent(__tryResult);
+            return $endTryIdent(__tryResult);
           }
+          return;
         };
       }
       case EThrow(e):
@@ -616,7 +660,11 @@ class ContinuationDetail
                         return
                         {
                           pos: caseBody.expr.pos,
-                          expr: ECall(endSwitchIdent, caseResults)
+                          expr: EReturn(
+                            {
+                              pos: caseBody.expr.pos,
+                              expr: ECall(endSwitchIdent, caseResults)
+                            })
                         };
                       }),
                     values: caseBody.values
@@ -634,7 +682,11 @@ class ContinuationDetail
                   return
                   {
                     pos: edef.pos,
-                    expr: ECall(endSwitchIdent, edefResults)
+                    expr: EReturn(
+                      {
+                        pos: edef.pos,
+                        expr: ECall(endSwitchIdent, edefResults)
+                      })
                   };
                 }))
           };
@@ -663,7 +715,13 @@ class ContinuationDetail
           expr: EFunction(
             endSwitchName,
             {
-              ret: null,
+              ret: TPath(
+                {
+                  sub: null,
+                  params: [],
+                  pack: [],
+                  name: "Void"
+                }),
               params: [],
               expr: rest(endSwitchArgIdents),
               args: endSwitchArgs
@@ -672,12 +730,7 @@ class ContinuationDetail
         return macro
         {
           $endSwitchFunction;
-          var __switchResult = null;
           $transformedSwitch;
-          if (__switchResult != null)
-          {
-            $endSwitchIdent(__switchResult);
-          }
         };
 
       }
@@ -686,14 +739,19 @@ class ContinuationDetail
         if (returnExpr == null)
         {
           return
-          {
+          
+                        {
+                          pos: origin.pos,
+                          expr: EReturn(
+                          {
+          
             pos: origin.pos,
             expr: ECall(
               {
                 pos: origin.pos,
                 expr: EConst(CIdent("__return"))
               },
-              [])
+                          [])})
           };
         }
         switch (returnExpr.expr)
@@ -734,11 +792,15 @@ class ContinuationDetail
                                   });
                               },
                               {
+                                pos:origin.pos,
+                                expr: EReturn({
                                 pos: origin.pos,
                                 expr: ECall(
                                   unpack(functionResult, origin.pos),
                                   transformedParams)
-                              });
+                              })
+                              }
+                              );
                           transformedParams.push(
                             {
                               expr: EConst(CIdent("__return")),
@@ -764,13 +826,16 @@ class ContinuationDetail
             return
             {
               pos: origin.pos,
+              expr: EReturn(
+            {
+              pos: origin.pos,
               expr: ECall(
                 {
                   pos: origin.pos,
                   expr: EConst(CIdent("__return"))
                 },
                 eResult)
-            };
+            })};
           });
       }
       case EParenthesis(e):
@@ -919,7 +984,7 @@ class ContinuationDetail
       }
       case EContinue:
       {
-        return macro __continue();
+        return macro return __continue();
       }
       case EConst(c):
       {
@@ -1027,14 +1092,24 @@ class ContinuationDetail
                           },
                           {
                             pos: origin.pos,
-                            expr: ECall(unpack(functionResult, origin.pos), parameters)
+                            expr: EReturn(
+                            {
+                              pos: origin.pos,
+                              expr: ECall(unpack(functionResult, origin.pos), parameters)
+                            })
                           });
                       parameters.push(
                         {
                           pos: origin.pos,
                           expr: EFunction(null,
                           {
-                            ret: null,
+                            ret: TPath(
+                              {
+                                sub: null,
+                                params: [],
+                                pack: [],
+                                name: "Void"
+                              }) ,
                             params: [],
                             expr: rest(handlerArgResult),
                             args: handlerArgDefs
@@ -1076,7 +1151,7 @@ class ContinuationDetail
       }
       case EBreak:
       {
-        return macro __break();
+        return macro return __break();
       }
       case EBlock(exprs):
       {
