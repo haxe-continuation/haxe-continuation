@@ -12,7 +12,7 @@ clean:
 
 test: \
 bin/TestContinuation.n bin/TestContinuation.swf bin/TestContinuation.js \
-bin/Sample.swf bin/Sample.js
+bin/Sample.swf bin/Sample.js bin/Sample_cs bin/Sample_java
 
 bin/TestContinuation.n: \
 com/dongxiguo/continuation/Continuation.hx \
@@ -31,6 +31,20 @@ com/dongxiguo/continuation/Continuation.hx \
 tests/TestContinuation.hx \
 | bin
 	haxe -js $@ -main tests.TestContinuation
+
+bin/Sample_java: \
+com/dongxiguo/continuation/Continuation.hx \
+tests/Sample.hx \
+| bin
+	$(RM) -r $@
+	haxe -java $@ -main tests.Sample
+
+bin/Sample_cs: \
+com/dongxiguo/continuation/Continuation.hx \
+tests/Sample.hx \
+| bin
+	$(RM) -r $@
+	haxe -cs $@ -main tests.Sample
 
 bin/Sample.swf: \
 com/dongxiguo/continuation/Continuation.hx \
