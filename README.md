@@ -29,9 +29,9 @@ Output to JavaScript:
 ## Usage
 
 You can use `Continuation.cpsFunction` to write a CPS asynchronous
-function. In `Continuation.cpsFunction`, `async` is a keyword to invoke other
-async functions. With a `.async()` postfix, you need not to explicitly pass a callback
-function. Instead, the code after `async` will be captured as the callback
+function. In `Continuation.cpsFunction`, `async` is a magic word to invoke other
+async functions. When calling an asynchronous function with the `.async()` postfix, you need not to explicitly pass a callback
+function. Instead, the code after `.async()` will be captured as the callback
 function used by the callee.
 
     import com.dongxiguo.continuation.Continuation;
