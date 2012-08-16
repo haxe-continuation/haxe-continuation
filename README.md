@@ -3,8 +3,9 @@ haxe-continuation
 
 If a function's last parameter is a callback function, it is an
 *asynchronous function*. **haxe-continuation** enable you to write an
-asynchronous function in *continuation-passing style (CPS)*. That means
-you can write code runs like *multi-threading* without platform
+asynchronous function like a synchronization function, and automatically
+transform the function in *continuation-passing style (CPS)*. That means
+you can write code runs like *multithreading* without platform
 multi-threading support.
 
 ## Installation
@@ -37,6 +38,7 @@ function used by the callee.
     import com.dongxiguo.continuation.Continuation;
     class Sample
     {
+      // An asynchronous function without automatically CPS transformation.
       static function sleepOneSecond(handler:Void->Void):Void
       {
         haxe.Timer.delay(handler, 1000);
@@ -48,6 +50,7 @@ function used by the callee.
           trace("Start continuation.");
           for (i in 0...10)
           {
+            // Invoke an asynchronous function.
             sleepOneSecond().async();
             trace("Run sleepOneSecond " + i + " times.");
           }
@@ -67,6 +70,7 @@ before a class, and marking the CPS functions in that class as `@cps`:
     @:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
     class Sample2
     {
+      // An asynchronous function without automatically CPS transformation.
       static function sleepOneSecond(handler:Void->Void):Void
       {
         haxe.Timer.delay(handler, 1000);
@@ -76,6 +80,7 @@ before a class, and marking the CPS functions in that class as `@cps`:
         trace("Start continuation.");
         for (i in 0...10)
         {
+          // Invoke an asynchronous function.
           sleepOneSecond().async();
           trace("Run sleepOneSecond " + i + " times.");
         }
@@ -95,7 +100,8 @@ for more examples.
 
 ### Work with [hx-node](https://github.com/cloudshift/hx-node)
 
-Look at https://github.com/Atry/haxe-continuation/blob/master/tests/TestNode.hx, which creates a directory named *TestNode*, and concurrently put 5 files into it.
+Look at https://github.com/Atry/haxe-continuation/blob/master/tests/TestNode.hx.
+The example forks 5 threads, and calls Node.js's asynchronous functions in each thread.
 
 ## License
 
