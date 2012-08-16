@@ -95,7 +95,7 @@ for more examples.
 
 ### Work with [hx-node](https://github.com/cloudshift/hx-node)
 
-Look at https://github.com/Atry/haxe-continuation/blob/master/tests/TestNode.hx, which create a directory named *TestNode*, and concurrently put 5 files into it.
+Look at https://github.com/Atry/haxe-continuation/blob/master/tests/TestNode.hx, which creates a directory named *TestNode*, and concurrently put 5 files into it.
 
 ## License
 
