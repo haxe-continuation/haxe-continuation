@@ -44,7 +44,7 @@ class TestNode
     // Fork 5 threads now!
     var fileName = ["1.txt", "2.log", "3.txt", "4.ini", "5.conf"].iter().async();
     
-    // Note that some asynchronous function return more than one values!
+    // Note that some asynchronous functions return more than one values!
     // It's OK in CPS functions, just like Lua.
     var err, fd = Node.fs.open("TestNode/" + fileName, "w+").async();
     if (err != null)
