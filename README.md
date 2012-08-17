@@ -5,8 +5,8 @@ If a function's last parameter is a callback function, it is an
 *asynchronous function*. **haxe-continuation** enable you to write an
 asynchronous function like a synchronization function, and automatically
 transform the function in *continuation-passing style (CPS)*. That means
-you can write code runs like *multithreading* without platform
-multi-threading support.
+you can write code looks like *multithreading* without platform
+multithreading support.
 
 ## Installation
 
