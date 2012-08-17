@@ -27,6 +27,8 @@ Output to JavaScript:
 
 , or output to any other platform that Haxe supports.
 
+haxe-continuation requires Haxe 2.10.
+
 ## Usage
 
 You can use `Continuation.cpsFunction` to write a CPS asynchronous
