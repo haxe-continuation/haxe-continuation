@@ -42,9 +42,9 @@ using Lambda;
 class Continuation 
 {
   /**
-   * Convert a function to CPS function.
+   * Wrap a function to CPS function.
    *
-   * In converted function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
+   * In wrapped function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
    */
   @:macro public static function cpsFunction(expr:Expr):Expr
   {
@@ -98,9 +98,9 @@ class Continuation
   }
 
   /**
-   * When add <code>@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("metaName"))</code> in front of a class, any method with same metadata name from <code>metaName</code> in that class will be converted to CPS function.
+   * When you add <code>@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("metaName"))</code> in front of a class, any method with same metadata name from <code>metaName</code> in that class will be transfromed to CPS function.
    *
-   * In converted function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
+   * In these methods, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
    */
   @:noUsing @:macro public static function cpsByMeta(metaName:String):Array<Field>
   {
