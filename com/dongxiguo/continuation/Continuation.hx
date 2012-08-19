@@ -158,7 +158,10 @@ class Continuation
 
 }
 
-// For internal use only, don't access it immediately.
+/**
+ * For internal use only, don't access it immediately.
+ * @private
+ */
 class ContinuationDetail
 {
   #if macro
