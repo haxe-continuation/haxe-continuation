@@ -100,7 +100,7 @@ before a class, and marking the CPS functions in that class as `@cps`:
 See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx
 for more examples.
 
-### Work with [hx-node](https://github.com/cloudshift/hx-node)
+### Working with [hx-node](https://github.com/cloudshift/hx-node)
 
 Look at https://github.com/Atry/haxe-continuation/blob/master/tests/TestNode.hx.
 The example forks 5 threads, and calls Node.js's asynchronous functions in each thread.
