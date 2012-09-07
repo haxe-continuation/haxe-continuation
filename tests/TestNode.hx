@@ -69,7 +69,7 @@ class TestNode
     }
   }
 
-  public static function main() 
+  public static function main():Void
   {
     startTest(
       function():Void
