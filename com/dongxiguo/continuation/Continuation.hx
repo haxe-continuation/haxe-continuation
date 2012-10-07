@@ -159,7 +159,7 @@ class Continuation
 }
 
 /**
- * For internal use only, don't access it immediately.
+ * For internal use only. Don't access it immediately.
  * @private
  */
 class ContinuationDetail
