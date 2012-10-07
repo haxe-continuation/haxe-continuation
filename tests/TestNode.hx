@@ -9,7 +9,7 @@ using Lambda;
 class TestNode 
 {
   /**
-   * Write <code>content</code> to <code>fd</code>.
+   * Writes <code>content</code> to <code>fd</code>.
    */
   @cps static function writeAll(fd:Int, content:String):Null<NodeErr>
   {
@@ -29,7 +29,7 @@ class TestNode
   }
   
   /**
-   * Create a directory named "TestNode", and concurrently put 5 files into it.
+   * Creates a directory named "TestNode", and concurrently put 5 files into it.
    */
   @cps static function startTest():Void
   {
