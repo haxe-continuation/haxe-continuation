@@ -8,7 +8,7 @@ com/dongxiguo/continuation/Continuation.hx
 	 zip -u $@ $^
 
 clean:
-	$(RM) -r bin release.zip
+	$(RM) -r bin release.zip haxedoc.xml
 
 test: \
 bin/TestContinuation.n bin/TestContinuation.swf bin/TestContinuation.js \
