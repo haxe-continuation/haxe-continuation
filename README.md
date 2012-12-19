@@ -10,7 +10,7 @@ multithreading support.
 
 ## Installation
 
-I have upload haxe-continuation to haxelib. To install, type following
+I have upload haxe-continuation to haxelib. To install, type the following
 command in shell:
 
     haxelib install continuation
