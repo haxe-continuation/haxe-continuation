@@ -23,7 +23,7 @@
     <option flashStrict="False" />
     <option mainClass="tests.TestNode" />
     <option enabledebug="False" />
-    <option additional="--dead-code-elimination" />
+    <option additional="-dce full" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>

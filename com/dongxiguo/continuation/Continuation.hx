@@ -279,6 +279,12 @@ class ContinuationDetail
   {
     switch (origin.expr)
     {
+      #if haxe_211
+      case EMeta(_, _):
+      {
+        return rest([origin]);
+      }
+      #end
       case EWhile(econd, e, normalWhile):
       {
         var continueName = "__continue_" + seed++;
@@ -586,6 +592,9 @@ class ContinuationDetail
                 {
                   return
                   {
+                    #if haxe_211
+                    guard: caseBody.guard,
+                    #end
                     expr: transform(
                       caseBody.expr,
                       function(caseResults)
@@ -808,7 +817,7 @@ class ContinuationDetail
             }
           ]));
       }
-      case EIn(e1, e2):
+      case EIn(_, _):
       {
         // Unsupported. Don't change it.
         return rest([origin]);
@@ -817,7 +826,7 @@ class ContinuationDetail
       {
         return transformCondition(origin.pos, econd, eif, eelse, rest);
       }
-      case EFunction(name, f):
+      case EFunction(_, _):
       {
         return rest([origin]);
       }
@@ -890,11 +899,11 @@ class ContinuationDetail
               ]);
           });
       }
-      case EDisplayNew(t):
+      case EDisplayNew(_):
       {
         return rest([origin]);
       }
-      case EDisplay(e, isCall):
+      case EDisplay(_, _):
       {
         return rest([origin]);
       }
@@ -902,7 +911,7 @@ class ContinuationDetail
       {
         return macro __continue();
       }
-      case EConst(c):
+      case EConst(_):
       {
         return rest([origin]);
       }
@@ -955,11 +964,11 @@ class ContinuationDetail
                       var handlerArgs =
                         switch (Context.typeof(unpack(functionResult, e.pos)))
                         {
-                          case TFun(args, ret):
+                          case TFun(args, _):
                           {
                             switch (args[args.length - 1].t)
                             {
-                              case TFun(args, ret):
+                              case TFun(args, _):
                               {
                                 args;
                               }
