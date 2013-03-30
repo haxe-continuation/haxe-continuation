@@ -47,6 +47,7 @@ class TestContinuation
   }
   @cps static function void1(n:Int):Void
   {
+    TestForkJoin.testForkJoin().async();
     return;
   }
   
