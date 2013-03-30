@@ -1157,7 +1157,6 @@ class ContinuationDetail
   static function delay(pos:Position, delayedFunction:Void->Expr):Expr
   {
     var id = delayFunctions.length;
-    trace("delay id " + id);
     var idExpr = Context.makeExpr(id, Context.currentPos());
     delayFunctions.push(delayedFunction);
     return

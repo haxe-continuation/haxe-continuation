@@ -4,13 +4,13 @@
   <output>
     <movie outputType="Application" />
     <movie input="" />
-    <movie path="bin\TestNode.js" />
+    <movie path="bin\TestNode.swf" />
     <movie fps="0" />
     <movie width="0" />
     <movie height="0" />
-    <movie version="1" />
+    <movie version="11" />
     <movie minorVersion="0" />
-    <movie platform="JavaScript" />
+    <movie platform="Flash Player" />
     <movie background="#FFFFFF" />
   </output>
   <!-- Other classes to be compiled into your SWF -->
@@ -19,10 +19,10 @@
   </classpaths>
   <!-- Build options -->
   <build>
-    <option directives="" />
-    <option flashStrict="False" />
-    <option mainClass="tests.TestNode" />
-    <option enabledebug="False" />
+    <option directives="nativeTrace" />
+    <option flashStrict="True" />
+    <option mainClass="tests.TestForkJoin" />
+    <option enabledebug="True" />
     <option additional="" />
   </build>
   <!-- haxelib libraries -->
@@ -32,8 +32,12 @@
   <!-- Class files to compile (other referenced classes will automatically be included) -->
   <compileTargets>
     <compile path="src\Main.hx" />
-    <compile path="tests\TestNode.hx" />
+    <compile path="tests\TestForkJoin.hx" />
   </compileTargets>
+  <!-- Assets to embed into the output SWF -->
+  <library>
+    <!-- example: <asset path="..." id="..." update="..." glyphs="..." mode="..." place="..." sharepoint="..." /> -->
+  </library>
   <!-- Paths to exclude from the Project Explorer tree -->
   <hiddenPaths>
     <!-- example: <hidden path="..." /> -->
@@ -45,8 +49,7 @@
   <!-- Other project options -->
   <options>
     <option showHiddenPaths="False" />
-    <option testMovie="OpenDocument" />
-    <option testMovieCommand="bin/index.html" />
+    <option testMovie="Default" />
   </options>
   <!-- Plugin storage -->
   <storage />
