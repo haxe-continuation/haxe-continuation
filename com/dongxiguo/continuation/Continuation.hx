@@ -1129,13 +1129,37 @@ class ContinuationDetail
   
   static var nextDelayedId = 0;
   
-  static var delayFunctions(null, never):IntMap<Void->Expr> = new IntMap<Void->Expr>();
+  @:isVar
+  static var delayFunctions(get_delayFunctions, set_delayFunctions):Array<Void->Expr>;
+
+  static function set_delayFunctions(value:Array<Void->Expr>):Array<Void->Expr>
+  {
+    return delayFunctions = value;
+  }
+
+  static function get_delayFunctions():Array<Void->Expr>
+  {
+    if (delayFunctions == null)
+    {
+      Context.onGenerate(
+        function(allType)
+        {
+          delayFunctions = null;
+        });
+      return delayFunctions = [];
+    }
+    else
+    {
+      return delayFunctions;
+    }
+  }
   
   static function delay(pos:Position, delayedFunction:Void->Expr):Expr
   {
-    var id = nextDelayedId++;
+    var id = delayFunctions.length;
+    trace("delay id " + id);
     var idExpr = Context.makeExpr(id, Context.currentPos());
-    delayFunctions.set(id, delayedFunction);
+    delayFunctions.push(delayedFunction);
     return
     {
       pos: pos,
@@ -1147,9 +1171,7 @@ class ContinuationDetail
   
   @:noUsing @:macro public static function runDelayedFunction(id:Int):Expr
   {
-    var f = delayFunctions.get(id);
-    //delayFunctions.remove(id);
-    return f();
+    return delayFunctions[id]();
   }
 
 }
