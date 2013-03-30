@@ -85,8 +85,9 @@ class Continuation
                   }
                 ]),
               expr:
-                macro com.dongxiguo.continuation.Continuation.ContinuationDetail
-                .cps($originExpr)
+                macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+                  $originExpr,
+                  /*inline*/ function(){}),
             })
         };
       }
@@ -96,7 +97,7 @@ class Continuation
       }
     }
   }
-
+  
   /**
    * When you add <code>@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("metaName"))</code> in front of a class, any method with same metadata name from <code>metaName</code> in that class will be transfromed to CPS function.
    *
@@ -141,8 +142,7 @@ class Continuation
                 });
               var originExpr = f.expr;
               f.expr =
-                macro com.dongxiguo.continuation.Continuation.ContinuationDetail
-                .cps($originExpr);
+                macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($originExpr, /*inline*/ function(){});
               break;
             }
           }
@@ -177,892 +177,576 @@ class ContinuationDetail
     return exprs[0];
   }
 
-  static function transformCondition(
+  static function evaluateCondition(
     pos:Position,
     econd:Expr,
     eif:Expr,
-    eelse:Null<Expr>, rest:Array<Expr>->Expr):Expr
+    eelse:Null<Expr>,
+    completeHandler:Expr,
+    additionExpr:Expr):Expr
   {
     if (eelse == null)
     {
-      eelse = { pos: pos, expr: EBlock([]) };
-    }
-    var endIfName = "__endIf_" + seed++;
-    var endIfArgs = [];
-    var ifResultIdents = [];
-    var numResults = 0;
-    var transformedIf =
-      transform(
-        econd,
-        function(econdResult)
-        {
-          return
-          {
-            pos: pos,
-            expr: EIf(
-              unpack(econdResult, econd.pos),
-              transform(eif, function(eifResult)
-              {
-                if (numResults < eifResult.length)
-                {
-                  numResults = eifResult.length;
-                }
-                return
-                {
-                  pos: eif.pos,
-                  expr: ECall(
-                    {
-                      pos: eif.pos,
-                      expr: EConst(CIdent(endIfName))
-                    },
-                    eifResult)
-                }
-              }),
-              transform(eelse, function(eelseResult)
-              {
-                if (numResults < eelseResult.length)
-                {
-                  numResults = eelseResult.length;
-                }
-                return
-                {
-                  pos: eelse.pos,
-                  expr: ECall(
-                    {
-                      pos: eelse.pos,
-                      expr: EConst(CIdent(endIfName))
-                    },
-                    eelseResult)
-                }                    
-              })
-              )
-          };
-        });
-    for (i in 0...numResults)
-    {
-      var ifResultName = "__ifResult_" + seed++;
-      endIfArgs.push(
+      return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($econd, /*inline*/ function(econdResult)
       {
-        name: ifResultName,
-        opt: true,
-        value: null,
-        type: null
-      });
-      ifResultIdents.push(
+        if (econdResult)
         {
-          pos: pos,
-          expr: EConst(CIdent(ifResultName))
-        });
+          com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($eif, $completeHandler);
+        }
+        else
+        {
+          com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr);
+        }
+      });
     }
-    return
+    else
     {
-      pos: pos,
-      expr: EBlock(
-        [
-          {
-            pos: pos,
-            expr: EFunction(
-              endIfName,
-              {
-                expr: rest(ifResultIdents),
-                ret: null,
-                params: [],
-                args: endIfArgs
-              })
-          },
-          transformedIf
-        ])
-    };
+      return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($econd, /*inline*/ function(econdResult)
+      {
+        if (econdResult)
+        {
+          com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($eif, $completeHandler);
+        }
+        else
+        {
+          com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($eelse, $completeHandler);
+        }
+      });
+    }
+  }
+  #end
+  
+  @:macro @:noUsing public static function call(parameters:Array<Expr>):Expr
+  {
+    var f = parameters.pop();
+    return 
+    {
+      pos: Context.currentPos(),
+      expr: ECall(f, parameters),
+    }
   }
   
-  static function transform(origin:Expr, rest:Array<Expr>->Expr):Expr
+  @:macro @:noUsing public static function apply(f:Expr, prefixParameters:Expr, moreParameters:Array<Expr>):Expr
   {
+    switch (prefixParameters.expr)
+    {
+      case EArrayDecl(values):
+      {
+        var parameters = values.length == 0 ? moreParameters : values.concat(moreParameters);
+        switch (f.expr)
+        {
+          case EFunction(_, { expr:e, args: [], params: [], ret:r } ) if (r == null):
+          {
+            return {
+              pos: f.pos,
+              expr: EBlock(parameters.concat([e])),
+            }
+          }
+          default:
+          {
+            return
+            {
+              expr: ECall(f, parameters),
+              pos: f.pos,
+            }
+          }
+        }
+      }
+      default:
+      {
+        return Context.error("Expected EArrayDecl", prefixParameters.pos);
+      }
+    }
+  }
+  
+  @:noUsing @:macro public static function evaluate(origin:Expr, completeHandler:Expr, additionParameters:Array<Expr>):Expr
+  {
+    var additionExpr =
+    {
+      pos: origin.pos,
+      expr: EArrayDecl(additionParameters),
+    }
     switch (origin.expr)
     {
-      #if haxe_211
-      case EMeta(_, _):
-      {
-        return rest([origin]);
-      }
-      #end
       case EWhile(econd, e, normalWhile):
       {
-        var continueName = "__continue_" + seed++;
-        var continueIdent =
-        {
-          pos: origin.pos,
-          expr: EConst(CIdent(continueName))
-        };
-        var breakName =
-          "__break_" + seed++;
-        var breakIdent =
-        {
-          pos: origin.pos,
-          expr: EConst(CIdent(breakName))
-        };
-        var doBody = transform(e,
-          function(eResult)
+        var testFunctionName = "__test_" + seed++;
+        var testFunctionIdent = { pos: origin.pos, expr: EConst(CIdent(testFunctionName)), };
+        var body =
+          macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e, $testFunctionIdent);
+        var defineTest =
+          macro /*inline*/ function $testFunctionName()
           {
-            return
+            /*inline*/ function __break() { com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr); }
+            function __continue()
             {
-              pos: origin.pos,
-              expr: EBlock(eResult.concat([ macro $continueIdent()]))
-            };
-          });
-        var continueBody = transform(
-          econd,
-          function(econdResult)
-          {
-            return
-            {
-              pos: origin.pos,
-              expr: EIf(
-                unpack(econdResult, econd.pos),
-                macro __do(),
-                macro $breakIdent())
-            };
-          });
-        var breakBody = rest([]);
-        var startIdent = normalWhile ? macro $continueIdent : macro __do;
-        return macro
-        {
-          function $breakName():Void
-          {
-            $breakBody;
-          }
-          var $continueName = null;
-          inline function __do()
-          {
-            inline function __break()
-            {
-              $breakIdent();
+              com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+                $econd,
+                function(econd) { return econd ? $body : __break(); } );
             }
-            inline function __continue()
-            {
-              $continueIdent();
-            }
-            $doBody;
+            __continue();
           }
-          $continueIdent = function():Void
+        if (normalWhile)
+        {
+          return macro
           {
-            $continueBody;
+            $defineTest;
+            $testFunctionIdent();
           }
-          $startIdent();
-        };
+        }
+        else
+        {
+          return macro
+          {
+            $defineTest;
+            $body;
+          }
+        }
       }
       case EVars(originVars):
       {
-        var transformedVars = [];
-        return originVars.fold(
-          function(originVar, e:Expr):Expr
+        if (originVars.length == 0)
+        {
+          return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr);
+        }
+        var v = originVars.pop();
+        var uninitializedVars = [];
+        while (v.expr == null)
+        {
+          uninitializedVars.unshift(v);
+          if (originVars.length == 0)
           {
-            transformedVars.push(
+            return macro { $origin; com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr); }
+          }
+          v = originVars.pop();
+        }
+        var result = macro { $origin; com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr); }
+        while (true)
+        {
+          var e = v.expr;
+          var functionArgs = [ { name: v.name, opt: false, type:v.type, value: null, } ];
+          function prependVars(oldHandler:Expr):Expr
+          {
+            var oldResult = result;
+            var f =
             {
-              name: originVar.name,
-              type: originVar.type,
-              expr: null
-            });
-            if (originVar.expr == null)
+              pos: origin.pos,
+              expr: EFunction(
+                null,
+                {
+                  params: [],
+                  args: functionArgs,
+                  ret: null,
+                  expr: oldResult,
+                }),
+            }
+            return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e, $f);
+          }
+          while (true)
+          {
+            if (originVars.length == 0)
             {
-              return e;
+              return prependVars(result);
+            }
+            v = originVars.pop();
+            if (v.expr == null)
+            {
+              functionArgs.unshift( { name: v.name, opt: false, type:v.type, value: null, } );
             }
             else
             {
-              return transform(originVar.expr, function(transformedExprs:Array<Expr>):Expr
-              {
-                if (transformedVars.length < transformedExprs.length)
-                {
-                  Context.error(
-                    "Expect " + transformedExprs.length + " variable declarations.",
-                    origin.pos);
-                }
-                for (i in 0...transformedExprs.length)
-                {
-                  var transformedVar =
-                    transformedVars[
-                      transformedVars.length - transformedExprs.length + i];
-                  if (transformedVar.expr == null)
-                  {
-                    transformedVar.expr = transformedExprs[i];
-                  }
-                  else
-                  {
-                    Context.error(
-                      "Expect " + transformedExprs.length + " variable declarations.",
-                      origin.pos);
-                  }
-                }
-                return e;
-              });
+              result = prependVars(result);
+              break;
             }
-          },
-          rest(
-            [
-              {
-                pos: origin.pos,
-                expr: EVars(transformedVars)
-              }
-            ]));
+          }
+        }
       }
       case EUntyped(e):
       {
-        return transform(
-          e,
-          function(eResult)
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: EUntyped(macro e),
+        }
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+          $e,
+          /*inline*/ function(e)
           {
-            return rest(
-              [
-                {
-                  pos: origin.pos,
-                  expr: EUntyped(unpack(eResult, origin.pos))
-                }
-              ]);
-          });
+            com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr);
+          } );
       }
       case EUnop(op, postFix, e):
       {
-        return transform(
-          e,
-          function(eResult)
-          {
-            return rest(
-              [
-                {
-                  pos: origin.pos,
-                  expr: EUnop(op, postFix, unpack(eResult, origin.pos))
-                }
-              ]);
-          });
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: EUnop(op, postFix, macro e),
+        }
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e, /*inline*/ function(e) { com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr); } );
       }
       #if !haxe3
       case EType(e, field):
       {
-        return transform(
-          e,
-          function(eResult)
-          {
-            return rest(
-              [
-                {
-                  pos: origin.pos,
-                  expr: EType(unpack(eResult, origin.pos), field)
-                }
-              ]);
-          });
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: EType(macro e, field),
+        }
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e, /*inline*/ function(e) { com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr); } );
       }
       #end
       case ETry(e, catches):
       {
-        var endTryName = "__endTry_" + seed++;
-        var endTryIdent = 
-        {
-          pos: origin.pos,
-          expr: EConst(CIdent(endTryName))
-        }
-        var tryResultName = "__tryResult_" + seed++;
-        var tryResultIdent =
-        {
-          pos: origin.pos,
-          expr: EConst(CIdent(tryResultName))
-        }
-        var endTryFunction =
-        {
-          pos: origin.pos,
-          expr: EFunction(
-            endTryName,
+        var tryExpr = {
+          expr: ETry(
+            macro { result = $e; noException = true; },
+            Lambda.array(Lambda.map(catches, function(c)
             {
-              ret: null,
-              params: [],
-              expr: rest([ tryResultIdent ]),
-              args:
-              [
-                {
-                  name: tryResultName,
-                  opt: true,
-                  type: null,
-                  value: null
-                }
-              ]
-            })
-        }
-        var transformedTry = 
-        {
+              var caseExpr = c.expr;
+              return { type:c.type, name: c.name, expr: macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($caseExpr, $completeHandler), };
+            }))),
           pos: origin.pos,
-          expr: ETry(macro { __tryResult = $e; __noException = true; }, catches.map(
-            function(catchBody)
-            {
-              return
-              {
-                expr: transform(
-                  catchBody.expr,
-                  function(catchResult)
-                  {
-                    switch (catchResult.length)
-                    {
-                      case 1:
-                      {
-                        return
-                        {
-                          pos: catchBody.expr.pos,
-                          expr: ECall(
-                            endTryIdent,
-                            [
-                              {
-                                pos: catchBody.expr.pos,
-                                expr: ECast(
-                                  unpack(catchResult, catchBody.expr.pos),
-                                  null)
-                              }
-                            ])
-                        };
-                      }
-                      default:
-                      {
-                        return
-                        {
-                          pos: origin.pos,
-                          expr: ECall(endTryIdent, catchResult)
-                        };
-                      }
-                    }
-                  }),
-                type: catchBody.type,
-                name: catchBody.name
-              }
-            }
-          ).array())
-        }
+        };
         return macro
         {
-          $endTryFunction;
-          var __noException = false;
-          var __tryResult = cast null;
-          $transformedTry;
-          if (__noException)
+          var result;
+          var noException = false;
+          $tryExpr;
+          if (noException)
           {
-            $endTryIdent(__tryResult);
+            com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, result);
           }
-        };
+        }
       }
       case EThrow(e):
       {
-        return transform(
-          e,
-          function(eResult)
-          {
-            return rest(
-              [
-                {
-                  pos: origin.pos,
-                  expr: EThrow(unpack(eResult, origin.pos))
-                }
-              ]);
-          });
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: EThrow(macro e),
+        }
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e, /*inline*/ function(e) { com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr); } );
       }
       case ETernary(econd, eif, eelse):
       {
-        return transformCondition(origin.pos, econd, eif, eelse, rest);
+        return evaluateCondition(origin.pos, econd, eif, eelse, completeHandler, additionExpr);
       }
       case ESwitch(e, cases, edef):
       {
-        if (edef == null)
-        {
-          edef =
+        var transformedCases =
+        [
+          for (c in cases)
           {
-            pos: origin.pos,
-            expr: EBlock([])
+            var caseBody = c.expr;
+            {
+              values: c.values,
+              #if haxe_211
+              guard: c.guard,
+              #end
+              expr: macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($caseBody, $completeHandler),
+            };
           }
-        }
-        var endSwitchName = "__endSwitch_" + seed++;
-        var endSwitchIdent = 
+        ];
+        var transformedDefault = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($edef, $completeHandler);
+        var innerExpr =
         {
           pos: origin.pos,
-          expr: EConst(CIdent(endSwitchName))
+          expr: ESwitch(macro e, transformedCases, transformedDefault),
         }
-        var numResults = 0;
-        var transformedSwitch = transform(e, function(eResults)
-        {
-          return
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+          $e, 
+          /*inline*/ function(e)
           {
-            pos: origin.pos,
-            expr: ESwitch(
-              unpack(eResults, e.pos),
-              cases.map(
-                function(caseBody)
-                {
-                  return
-                  {
-                    #if haxe_211
-                    guard: caseBody.guard,
-                    #end
-                    expr: transform(
-                      caseBody.expr,
-                      function(caseResults)
-                      {
-                        if (numResults < caseResults.length)
-                        {
-                          numResults = caseResults.length;
-                        }
-                        return
-                        {
-                          pos: caseBody.expr.pos,
-                          expr: ECall(endSwitchIdent, caseResults)
-                        };
-                      }),
-                    values: caseBody.values
-                  }
-                }
-              ).array(),
-              transform(
-                edef,
-                function(edefResults)
-                {
-                  if (numResults < edefResults.length)
-                  {
-                    numResults = edefResults.length;
-                  }
-                  return
-                  {
-                    pos: edef.pos,
-                    expr: ECall(endSwitchIdent, edefResults)
-                  };
-                }))
-          };
-        });
-        var endSwitchArgs = [];
-        var endSwitchArgIdents = [];
-        for (i in 0...numResults)
-        {
-          var switchResultName = "__switchResult_" + seed++;
-          endSwitchArgIdents.push(
-          {
-            pos: origin.pos,
-            expr: EConst(CIdent(switchResultName))
+            $innerExpr;
           });
-          endSwitchArgs.push(
-            {
-              name: switchResultName,
-              opt: true,
-              type: null,
-              value: null
-            });
-        }        
-        var endSwitchFunction =
-        {
-          pos: origin.pos,
-          expr: EFunction(
-            endSwitchName,
-            {
-              ret: null,
-              params: [],
-              expr: rest(endSwitchArgIdents),
-              args: endSwitchArgs
-            })
-        }
-        return macro
-        {
-          $endSwitchFunction;
-          var __switchResult = null;
-          $transformedSwitch;
-          if (__switchResult != null)
-          {
-            $endSwitchIdent(__switchResult);
-          }
-        };
-
       }
       case EReturn(returnExpr):
       {
-        if (returnExpr == null)
-        {
-          return
-          {
-            pos: origin.pos,
-            expr: ECall(
-              {
-                pos: origin.pos,
-                expr: EConst(CIdent("__return"))
-              },
-              [])
-          };
-        }
-        switch (returnExpr.expr)
-        {
-          case ECall(e, originParams):
-          {
-            if (originParams.length == 0)
-            {
-              switch (e.expr)
-              {
-                case EField(prefixCall, field):
-                {
-                  if (field == "async")
-                  {
-                    switch (prefixCall.expr)
-                    {
-                      case ECall(e, originParams):
-                      {
-                        // 优化 e 是另一个异步函数的情况
-                        return transform(e, function(functionResult)
-                        {
-                          var transformedParams = [];
-                          var result =
-                            {
-                              iterator: function()
-                              {
-                                return 0...originParams.length;
-                              }
-                            }.fold(
-                              function(i, expr)
-                              {
-                                return transform(
-                                  originParams[i],
-                                  function(prefixResult:Array<Expr>):Expr
-                                  {
-                                    transformedParams.push(unpack(prefixResult, expr.pos));
-                                    return expr;
-                                  });
-                              },
-                              {
-                                pos: origin.pos,
-                                expr: ECall(
-                                  unpack(functionResult, origin.pos),
-                                  transformedParams)
-                              });
-                          transformedParams.push(
-                            {
-                              expr: EConst(CIdent("__return")),
-                              pos: origin.pos
-                            });
-                          return result;
-                        });
-                      }
-                      default:
-                    }
-                  }
-                }
-                default:
-              }
-            }
-          }
-          default:
-        }
-        return transform(
-          returnExpr,
-          function(eResult)
-          {
-            return
-            {
-              pos: origin.pos,
-              expr: ECall(
-                {
-                  pos: origin.pos,
-                  expr: EConst(CIdent("__return"))
-                },
-                eResult)
-            };
-          });
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($returnExpr, __return);
       }
       case EParenthesis(e):
       {
-        return transform(e, rest);
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e, $completeHandler);
       }
       case EObjectDecl(originFields):
       {
-        var transformedFields = [];
-        return originFields.fold(function(field, expr)
-        {
-          return transform(
-            field.expr,
-            function(fieldResult:Array<Expr>):Expr
+        var parameterPrefix = "__fieldValue_" + seed++ + "_";
+        var transformedFields =
+        [
+          for (field in originFields)
+          {
             {
-              for (fieldIdent in fieldResult)
+              field: field.field,
+              expr:
               {
-                transformedFields.push(
+                pos: field.expr.pos,
+                expr: EConst(CIdent(parameterPrefix + field.field)),
+              },
+            };
+          }
+        ];
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: EObjectDecl(transformedFields),
+        }
+        var result = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr);
+        var i = originFields.length - 1;
+        while (i >= 0)
+        {
+          var field = originFields[i];
+          var valueExpr = field.expr;
+          var oldInnerExpr = result;
+          var parameterName = parameterPrefix + field.field;
+          var functionExpr =
+          {
+            pos: origin.pos,
+            expr: EFunction(
+              null,
+              {
+                args:
+                [
                   {
-                    expr: fieldIdent,
-                    field: field.field
-                  });
-              }
-              return expr;
-            });
-        }, rest(
-          [
-            {
-              pos: origin.pos,
-              expr: EObjectDecl(transformedFields)
-            }
-          ]));
+                  	name: parameterName,
+                    opt: false,
+                    type: null,
+                  }
+                ],
+                ret: null,
+                expr: oldInnerExpr,
+                params: [],
+              })
+          }
+          result = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($valueExpr, $functionExpr);
+          i--;
+        }
+        return result;
       }
       case ENew(t, originValues):
       {
-        var transformedValues = [];
-        return originValues.fold(function(originValue, expr)
+        var parameterPrefix = "__constructorParameter_" + seed++ + "_";
+        var transformedParameters =
+        [
+          for (i in 0...originValues.length)
+          {
+            {
+              pos: originValues[i].pos,
+              expr: EConst(CIdent(parameterPrefix + i)),
+            };
+          }
+        ];
+        var innerExpr =
         {
-          return transform(
-            originValue,
-            function(valueResults:Array<Expr>):Expr
-            {
-              for (valueResult in valueResults)
+          pos: origin.pos,
+          expr: ENew(t, transformedParameters),
+        }
+        var result = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr);
+        var i = originValues.length - 1;
+        while (i >= 0)
+        {
+          var parameterExpr = originValues[i];
+          var oldResult = result;
+          var parameterName = parameterPrefix + i;
+          var functionExpr =
+          {
+            pos: origin.pos,
+            expr: EFunction(
+              null,
               {
-                transformedValues.push(valueResult);
-              }
-              return expr;
-            });
-        }, rest(
-          [
-            {
-              pos: origin.pos,
-              expr: ENew(t, transformedValues)
-            }
-          ]));
-      }
-      case EIn(_, _):
-      {
-        // Unsupported. Don't change it.
-        return rest([origin]);
+                args:
+                [
+                  {
+                  	name: parameterName,
+                    opt: false,
+                    type: null,
+                  }
+                ],
+                ret: null,
+                expr: oldResult,
+                params: [],
+              })
+          }
+          result = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($parameterExpr, $functionExpr);
+          i--;
+        }
+        return result;
       }
       case EIf(econd, eif, eelse):
       {
-        return transformCondition(origin.pos, econd, eif, eelse, rest);
+        return evaluateCondition(origin.pos, econd, eif, eelse, completeHandler, additionExpr);
       }
-      case EFunction(_, _):
-      {
-        return rest([origin]);
-      }
-      case EFor(it, expr):
-      {
-        switch (it.expr)
+      case EFor({ expr: EIn({expr: EConst(CIdent(elementName))}, e2)}, body):
+      {  
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e2, function(collection)
         {
-          case EIn(e1, e2):
+          var __iterator = null;
           {
-            var elementName =
-              switch (e1.expr)
-              {
-                case EConst(c):
-                  switch (c)
-                  {
-                    case CIdent(s):
-                    {
-                      s;
-                    }
-                    default:
-                    {
-                      Context.error("Expect identify before \"in\".", e1.pos);
-                    }
-                  }
-                default:
-                {
-                  Context.error("Expect identify before \"in\".", e1.pos);
-                }
-              }
-            return transform(
-              macro
-              {
-                var __iterator = null;
-                {
-                  inline function setIterator<T>(
-                    iterable:Iterable<T> = null,
-                    iterator:Iterator<T> = null):Void
-                  {
-                    __iterator = iterable != null ? iterable.iterator() : iterator;
-                  }
-                  setIterator($e2);
-                }
-                while (__iterator.hasNext())
-                {
-                  var $elementName = __iterator.next();
-                  $expr;
-                }
-              },
-              rest);
+            /*inline*/ function setIterator<T>(
+              iterable:Iterable<T> = null,
+              iterator:Iterator<T> = null):Void
+            {
+              __iterator = iterable != null ? iterable.iterator() : iterator;
+            }
+            setIterator(collection);
           }
-          default:
-          {
-            Context.error("Expect \"in\" in \"for\".", it.pos);
-            return null;
-          }
-        }
+          com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+            while (__iterator.hasNext())
+            {
+              var $elementName = __iterator.next();
+              $body;
+            },
+            $completeHandler);
+        });
       }
       case EField(e, field):
       {
-        return transform(
-          e,
-          function(eResult)
-          {
-            return rest(
-              [
-                {
-                  pos: origin.pos,
-                  expr: EField(unpack(eResult, origin.pos), field)
-                }
-              ]);
-          });
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: EField(macro e, field),
+        }
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e, /*inline*/ function(e) { com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr); } );
       }
-      case EDisplayNew(_):
+      case EDisplay(e, isCall):
       {
-        return rest([origin]);
-      }
-      case EDisplay(_, _):
-      {
-        return rest([origin]);
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: EDisplay(macro e, isCall),
+        }
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e, /*inline*/ function(e) { com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr); } );
       }
       case EContinue:
       {
         return macro __continue();
       }
-      case EConst(_):
-      {
-        return rest([origin]);
-      }
       case ECheckType(e, t):
       {
-        return transform(
-          e,
-          function(eResult)
-          {
-            return rest(
-              [
-                {
-                  pos: origin.pos,
-                  expr: ECheckType(unpack(eResult, e.pos), t)
-                }
-              ]);
-          });
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: ECheckType(macro e, t),
+        }
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e, /*inline*/ function(e) { com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr); } );
       }
       case ECast(e, t):
       {
-        return transform(
-          e,
-          function(eResult)
-          {
-            return rest(
-              [
-                {
-                  pos: origin.pos,
-                  expr: ECast(unpack(eResult, e.pos), t)
-                }
-              ]);
-          });
-      }
-      case ECall(e, originParams):
-      {
-        if (originParams.length == 0)
+        var innerExpr =
         {
-          switch (e.expr)
-          {
-            case EField(prefixCall, field):
-            {
-              if (field == "async")
-              {
-                switch (prefixCall.expr)
-                {
-                  case ECall(e, originParams):
-                  {
-                    return transform(e, function(functionResult)
-                    {
-                      var handlerArgs =
-                        switch (Context.typeof(unpack(functionResult, e.pos)))
-                        {
-                          case TFun(args, _):
-                          {
-                            switch (args[args.length - 1].t)
-                            {
-                              case TFun(args, _):
-                              {
-                                args;
-                              }
-                              default:
-                              {
-                                throw "First parameter of async() must be a function whose last parameter is a handler.";
-                              }
-                            }
-                          }
-                          default:
-                          {
-                            throw "First parameter of async() must be a function";
-                          }
-                        }
-                      var handlerArgResult = [];
-                      var handlerArgDefs = [];
-                      for (i in 0...handlerArgs.length)
-                      {
-                        var handlerArg = handlerArgs[i];
-                        var name = "__parameter_" + seed++;
-                        handlerArgResult[i] =
-                          {
-                            pos: origin.pos,
-                            expr: EConst(CIdent(name))
-                          };
-                        handlerArgDefs[i] =
-                          {
-                            opt: handlerArg.opt,
-                            name: name,
-                            type: null,
-                            value: null
-                          };
-                      }
-                      var parameters = [];
-                      var result =
-                        {
-                          iterator: function() { return 0...originParams.length; }
-                        }.fold(
-                          function(i, expr)
-                          {
-                            return transform(originParams[i], function(prefixResult:Array<Expr>):Expr
-                            {
-                              parameters.push(unpack(prefixResult, expr.pos));
-                              return expr;
-                            });
-                          },
-                          {
-                            pos: origin.pos,
-                            expr: ECall(unpack(functionResult, origin.pos), parameters)
-                          });
-                      parameters.push(
-                        {
-                          pos: origin.pos,
-                          expr: EFunction(null,
-                          {
-                            ret: null,
-                            params: [],
-                            expr: rest(handlerArgResult),
-                            args: handlerArgDefs
-                          })
-                        });
-                      return result;
-                    });
-                  }
-                  default:
-                }
-              }
-            }
-            default:
-          }
+          pos: origin.pos,
+          expr: ECast(macro e, t),
         }
-        return transform(
-          e,
-          function(fResult):Expr
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($e, /*inline*/ function(e) { com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr); } );
+      }
+      case ECall( { expr: EField( { expr: ECall(callee, originParams) }, "async") }, []):
+      {
+        var parameterPrefix = "__asyncCallParameter_" + seed++ + "_";
+        trace(callee);
+        var evaluateParameters = [callee, macro com.dongxiguo.continuation.Continuation.ContinuationDetail.call];
+        for (i in 0...originParams.length)
+        {
+          evaluateParameters.push(
           {
-            var transformedParams = [];
-            return originParams.fold(function(param, expr)
-            {
-              return transform(param, function(paramResult:Array<Expr>):Expr
-              {
-                for (paramIdent in paramResult)
-                {
-                  transformedParams.push(paramIdent);
-                }
-                return expr;
-              });
-            }, rest(
-              [
-                {
-                  pos: origin.pos,
-                  expr: ECall(unpack(fResult, origin.pos), transformedParams)
-                }
-              ]));
+            pos: originParams[i].pos,
+            expr: EConst(CIdent(parameterPrefix + i)),
           });
+        }
+        evaluateParameters.push(
+        {
+          expr: ECall(macro $completeHandler.bind, additionParameters),
+          pos: origin.pos,
+        });
+        var result = 
+        {
+          pos: origin.pos,
+          expr: ECall(
+            macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate,
+            evaluateParameters),
+        }
+        var i = originParams.length - 1;
+        while (i >= 0)
+        {
+          var parameterExpr = originParams[i];
+          var oldResult = result;
+          var parameterName = parameterPrefix + i;
+          var functionExpr =
+          {
+            pos: origin.pos,
+            expr: EFunction(
+              null,
+              {
+                args:
+                [
+                  {
+                  	name: parameterName,
+                    opt: false,
+                    type: null,
+                  }
+                ],
+                ret: null,
+                expr: oldResult,
+                params: [],
+              })
+          }
+          result = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($parameterExpr, $functionExpr);
+          i--;
+        }
+        return result;
+      }
+      case ECall(callee, parameters):
+      {
+        var parameterPrefix = "__callParameter_" + seed++ + "_";
+        var transformedParameters =
+        [
+          for (i in 0...parameters.length)
+          {
+            {
+              pos: origin.pos,
+              expr: EConst(CIdent(parameterPrefix + i)),
+            };
+          }
+        ];
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: ECall(macro callee, transformedParameters),
+        }
+        var result =
+          macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+            $callee,
+            /*inline*/ function(callee)
+            {
+              com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr);
+            });
+        var i = parameters.length - 1;
+        while (i >= 0)
+        {
+          var parameterExpr = parameters[i];
+          var oldInnerExpr = result;
+          var parameterName = parameterPrefix + i;
+          var functionExpr =
+          {
+            pos: origin.pos,
+            expr: EFunction(
+              null,
+              {
+                args:
+                [
+                  {
+                  	name: parameterName,
+                    opt: false,
+                    type: null,
+                  }
+                ],
+                ret: null,
+                expr: oldInnerExpr,
+                params: [],
+              })
+          }
+          result = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($parameterExpr, $functionExpr);
+          i--;
+        }
+        return result;
       }
       case EBreak:
       {
@@ -1072,117 +756,175 @@ class ContinuationDetail
       {
         if (exprs.length == 0)
         {
-          return rest([]);
+          return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr);
         }
-        function next(blockLineIndex:Int, line:Array<Expr>):Expr
+        var lastExpr = exprs.pop();
+        var result = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($lastExpr, $completeHandler);
+        var i = exprs.length - 1;
+        while (i >= 0)
         {
-          if (blockLineIndex == exprs.length - 1)
-          {
-            return
-            {
-              pos: origin.pos,
-              expr: EBlock(
-                line.concat(
-                  [
-                    transform(exprs[blockLineIndex], rest)
-                  ]))
-            };
-          }
-          else
-          {
-            return
-            {
-              pos: origin.pos,
-              expr: EBlock(
-                line.concat(
-                  [
-                    transform(exprs[blockLineIndex], callback(next, blockLineIndex + 1))
-                  ]))
-            };
-          }
+          var e = exprs[i];
+          var oldResult = result;
+          result = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+            $e,
+            function() { $oldResult; } );
+          i--;
         }
-        return next(0, []);
+        return result;
       }
       case EBinop(op, e1, e2):
       {
-        return transform(
-          e1,
-          function(e1Result)
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: EBinop(op, macro e1, macro e2),
+        }
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+          $e1,
+          /*inline*/ function(e1)
           {
-            return transform(e2, function(e2Result)
-            {
-              return rest(
-                [
-                  {
-                    pos: origin.pos,
-                    expr: EBinop(
-                      op,
-                      unpack(e1Result, e1.pos),
-                      unpack(e2Result, e2.pos))
-                  }
-                ]);
-            });
+            com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+              $e2,
+              /*inline*/ function(e2)
+              {
+                com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr);
+              });
           });
+      }
+      case EArrayDecl([ { expr: EFor({ expr: EIn({expr: EConst(CIdent(elementName))}, collection)}, { expr: EIf(filter, body, eelse) }) } ]) if (eelse == null):
+      {
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($collection, function(collection)
+        {
+          var __iterator = null;
+          {
+            /*inline*/ function setIterator<T>(
+              iterable:Iterable<T> = null,
+              iterator:Iterator<T> = null):Void
+            {
+              __iterator = iterable != null ? iterable.iterator() : iterator;
+            }
+            setIterator(collection);
+          }
+          var result = [];
+          com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+            {
+              while (__iterator.hasNext())
+              {
+                var $elementName = __iterator.next();
+                if ($filter)
+                {
+                  result.push($body);
+                }
+              }
+              result;
+            },
+            $completeHandler);
+        });
+      }
+      case EArrayDecl([ { expr: EFor({ expr: EIn({expr: EConst(CIdent(elementName))}, collection)}, body) } ]):
+      {
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($collection, function(collection)
+        {
+          var __iterator = null;
+          {
+            /*inline*/ function setIterator<T>(
+              iterable:Iterable<T> = null,
+              iterator:Iterator<T> = null):Void
+            {
+              __iterator = iterable != null ? iterable.iterator() : iterator;
+            }
+            setIterator(collection);
+          }
+          var result = [];
+          com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+            {
+              while (__iterator.hasNext())
+              {
+                var $elementName = __iterator.next();
+                result.push($body);
+              }
+              result;
+            },
+            $completeHandler);
+        });
       }
       case EArrayDecl(originValues):
       {
-        var transformedValues = [];
-        return originValues.fold(function(originValue, expr)
+        var parameterPrefix = "__arrayElement_" + seed++ + "_";
+        var transformedParameters =
+        [
+          for (i in 0...originValues.length)
+          {
+            {
+              pos: originValues[i].pos,
+              expr: EConst(CIdent(parameterPrefix + i)),
+            };
+          }
+        ];
+        var innerExpr =
         {
-          return transform(
-            originValue,
-            function(valueResults:Array<Expr>):Expr
-            {
-              for (valueResult in valueResults)
+          pos: origin.pos,
+          expr: EArrayDecl(transformedParameters),
+        }
+        var result = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr);
+        var i = originValues.length - 1;
+        while (i >= 0)
+        {
+          var parameterExpr = originValues[i];
+          var oldResult = result;
+          var parameterName = parameterPrefix + i;
+          var functionExpr =
+          {
+            pos: origin.pos,
+            expr: EFunction(
+              null,
               {
-                transformedValues.push(valueResult);
-              }
-              return expr;
-            });
-        }, rest(
-          [
-            {
-              pos: origin.pos,
-              expr: EArrayDecl(transformedValues)
-            }
-          ]));
+                args:
+                [
+                  {
+                  	name: parameterName,
+                    opt: false,
+                    type: null,
+                  }
+                ],
+                ret: null,
+                expr: oldResult,
+                params: [],
+              })
+          }
+          result = macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate($parameterExpr, $functionExpr);
+          i--;
+        }
+        return result;
       }
       case EArray(e1, e2):
       {
-        return transform(
-          e1,
-          function(e1Result)
+        var innerExpr =
+        {
+          pos: origin.pos,
+          expr: EArray(macro e1, macro e2),
+        }
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+          $e1,
+          /*inline*/ function(e1)
           {
-            return transform(e2, function(e2Result)
-            {
-              return rest(
-                [
-                  {
-                    pos: origin.pos,
-                    expr: EArray(
-                      unpack(e1Result, e1.pos),
-                      unpack(e2Result, e2.pos))
-                  }
-                ]);
-            });
+            com.dongxiguo.continuation.Continuation.ContinuationDetail.evaluate(
+              $e2,
+              /*inline*/ function(e2)
+              {
+                com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $innerExpr);
+              });
           });
       }
-    }
-  }
-  #end
-  
-  @:noUsing @:macro public static function cps(body:Expr):Expr
-  {
-    return transform(
-      body,
-      function(exprs: Array<Expr>):Expr
+      case EConst(_) | EDisplayNew(_) | EFunction(_, _) | EIn(_, _) | EFor(_, _)
+      #if haxe_211
+        | EMeta(_, _)
+      #end
+      :
       {
-        return
-        {
-          pos: body.pos,
-          expr: EBlock(exprs.concat([macro (cast __return)()]))
-        }
-      });
+        return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.apply($completeHandler, $additionExpr, $origin);
+      }
+    }
   }
 }
 

@@ -8,6 +8,27 @@ using com.dongxiguo.continuation.Continuation;
 @:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
 class TestContinuation 
 {
+  
+  static var joiner:Counter = null;
+  @cps static function forkJoin():Int
+  {
+    var a = [1, 2, 3, 4];
+    var joiner:Counter = new Counter(a.length);
+    Lambda.iter(a).async();
+    trace(a);
+    read(4).async();
+    trace(a);
+    joiner.join().async();
+    if (read(1).async() == 1)
+    {
+      return 1;
+    }
+    else
+    {
+      return 2;
+    }
+  }
+  
   static function good(a, b):Int
   {
     trace(a + b);
@@ -22,7 +43,8 @@ class TestContinuation
 
   @cps static function write(n:Int):Int
   {
-    return n + 1;
+    var i = forkJoin().async();
+    return n + i;
   }
   @cps static function void1(n:Int):Void
   {
@@ -116,7 +138,7 @@ class TestContinuation
         {
           dummy();
         }
-        catch (x:Float)
+        catch (x:Array<Dynamic>)
         {
           trace("catch");
           foo(read(1).async()).async();
@@ -126,11 +148,11 @@ class TestContinuation
           {
             good(3, 2);
           }
-          catch (x:Int)
+          catch (x:Array<Dynamic>)
           {
-            foo(read(x).async()).async();
+            foo(read(x[0]).async()).async();
           }
-          catch (x:Float)
+          catch (x:IntHash<Dynamic>)
           {
           }
           catch (x:String)
@@ -257,3 +279,4 @@ class TestContinuation
   
   
 }
+typedef A = Int;
