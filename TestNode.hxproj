@@ -23,7 +23,7 @@
     <option flashStrict="False" />
     <option mainClass="tests.TestNode" />
     <option enabledebug="False" />
-    <option additional="-dce full" />
+    <option additional="" />
   </build>
   <!-- haxelib libraries -->
   <haxelib>

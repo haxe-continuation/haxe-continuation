@@ -2,4 +2,3 @@
 -lib nodejs
 -js bin/TestNode.js
 -main tests.TestNode
--dce full
