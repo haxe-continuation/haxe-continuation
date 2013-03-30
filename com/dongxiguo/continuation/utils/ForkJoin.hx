@@ -3,6 +3,7 @@ package com.dongxiguo.continuation.utils;
 /**
  * @author 杨博
  */
+@:final
 class ForkJoin
 {
 
