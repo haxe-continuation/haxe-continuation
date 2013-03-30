@@ -24,10 +24,13 @@ class ForkJoin
         else
         {
           isJoined = true;
-          quickJoinHandler = joinHandler;
           if (--counter == 0)
           {
             joinHandler();
+          }
+          else
+          {
+            quickJoinHandler = joinHandler;
           }
         }
       });
