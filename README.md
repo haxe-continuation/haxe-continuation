@@ -65,11 +65,11 @@ function used by the callee.
       }
     }
 
-Another way to write a CPS function is putting `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))`
-before a class, and marking the CPS functions in that class as `@cps`:
+Another way to write a CPS function is putting `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))`
+before a class, and marking the CPS functions in that class as `@:cps`:
 
     import com.dongxiguo.continuation.Continuation;
-    @:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
+    @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
     class Sample2
     {
       // An asynchronous function without automatically CPS transformation.
@@ -77,7 +77,7 @@ before a class, and marking the CPS functions in that class as `@cps`:
       {
         haxe.Timer.delay(handler, 1000);
       }
-      @cps static function asyncTest():Void
+      @:cps static function asyncTest():Void
       {
         trace("Start continuation.");
         for (i in 0...10)
