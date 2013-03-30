@@ -35,6 +35,11 @@ import haxe.macro.Type;
 import haxe.macro.Expr;
 #end
 using Lambda;
+#if haxe3
+import haxe.ds.IntMap;
+#else
+private typedef IntMap<Element> = IntHash<Element>;
+#end
 
 /**
  * @author 杨博 <pop.atry@gmail.com>
@@ -171,8 +176,8 @@ class ContinuationDetail
   {
     if (exprs.length != 1)
     {
-      Context.error("Expect one return value, but there is " + exprs.length +
-      " return value.", pos);
+      Context.error("Expect one return value, but there are " + exprs.length +
+      " return values.", pos);
     }
     return exprs[0];
   }
@@ -183,99 +188,30 @@ class ContinuationDetail
     eif:Expr,
     eelse:Null<Expr>, rest:Array<Expr>->Expr):Expr
   {
-    if (eelse == null)
-    {
-      eelse = { pos: pos, expr: EBlock([]) };
-    }
-    var endIfName = "__endIf_" + seed++;
-    var endIfArgs = [];
-    var ifResultIdents = [];
-    var numResults = 0;
-    var transformedIf =
-      transform(
-        econd,
-        function(econdResult)
-        {
-          return
-          {
-            pos: pos,
-            expr: EIf(
-              unpack(econdResult, econd.pos),
-              transform(eif, function(eifResult)
-              {
-                if (numResults < eifResult.length)
-                {
-                  numResults = eifResult.length;
-                }
-                return
-                {
-                  pos: eif.pos,
-                  expr: ECall(
-                    {
-                      pos: eif.pos,
-                      expr: EConst(CIdent(endIfName))
-                    },
-                    eifResult)
-                }
-              }),
-              transform(eelse, function(eelseResult)
-              {
-                if (numResults < eelseResult.length)
-                {
-                  numResults = eelseResult.length;
-                }
-                return
-                {
-                  pos: eelse.pos,
-                  expr: ECall(
-                    {
-                      pos: eelse.pos,
-                      expr: EConst(CIdent(endIfName))
-                    },
-                    eelseResult)
-                }                    
-              })
-              )
-          };
-        });
-    for (i in 0...numResults)
-    {
-      var ifResultName = "__ifResult_" + seed++;
-      endIfArgs.push(
+    return transform(
+      econd,
+      function(econdResult)
       {
-        name: ifResultName,
-        opt: true,
-        value: null,
-        type: null
-      });
-      ifResultIdents.push(
+        return
         {
           pos: pos,
-          expr: EConst(CIdent(ifResultName))
-        });
-    }
-    return
-    {
-      pos: pos,
-      expr: EBlock(
-        [
-          {
-            pos: pos,
-            expr: EFunction(
-              endIfName,
-              {
-                expr: rest(ifResultIdents),
-                ret: null,
-                params: [],
-                args: endIfArgs
-              })
-          },
-          transformedIf
-        ])
-    };
+          expr: EIf(
+            unpack(econdResult, econd.pos),
+            transform(eif, rest),
+            eelse == null ? null : transform(eelse, rest)),
+        };
+      });
   }
-  
+
   static function transform(origin:Expr, rest:Array<Expr>->Expr):Expr
+  {
+    return delay(function()
+    {
+      return transformNoDelay(origin, rest);
+    });
+  }
+    
+  static function transformNoDelay(origin:Expr, rest:Array<Expr>->Expr):Expr
   {
     switch (origin.expr)
     {
@@ -352,57 +288,61 @@ class ContinuationDetail
       }
       case EVars(originVars):
       {
-        var transformedVars = [];
-        return originVars.fold(
-          function(originVar, e:Expr):Expr
+        function transformNext(i:Int, values:Array<Null<Expr>>):Expr
+        {
+          if (i == originVars.length)
           {
-            transformedVars.push(
+            var newVars = [];
+            for (i in 0...originVars.length)
             {
-              name: originVar.name,
-              type: originVar.type,
-              expr: null
-            });
+              var valueExpr = i < values.length ? values[i] : null;
+              var originVar = originVars[i];
+              newVars.push({ type: originVar.type, name: originVar.name, expr: valueExpr, });
+            }
+            return
+            {
+              pos: origin.pos,
+              expr: EVars(newVars),
+            };
+          }
+          else
+          {
+            var originVar = originVars[i];
+            values.push(null);
             if (originVar.expr == null)
             {
-              return e;
+              return transformNext(i + 1, values);
             }
             else
             {
-              return transform(originVar.expr, function(transformedExprs:Array<Expr>):Expr
+              return transform(originVar.expr, function(varResult)
               {
-                if (transformedVars.length < transformedExprs.length)
+                if (i + 1 < varResult.length)
                 {
-                  Context.error(
-                    "Expect " + transformedExprs.length + " variable declarations.",
+                  return Context.error(
+                    "Expect " + varResult.length + " variable declarations.",
                     origin.pos);
                 }
-                for (i in 0...transformedExprs.length)
+                for (j in 0...varResult.length)
                 {
-                  var transformedVar =
-                    transformedVars[
-                      transformedVars.length - transformedExprs.length + i];
-                  if (transformedVar.expr == null)
+                  var slot = j + i + 1 - varResult.length;
+                  if (values[slot] == null)
                   {
-                    transformedVar.expr = transformedExprs[i];
+                    values[slot] = varResult[j];
                   }
                   else
                   {
-                    Context.error(
-                      "Expect " + transformedExprs.length + " variable declarations.",
+                    return Context.error(
+                      "Expect " + varResult.length + " variable declarations.",
                       origin.pos);
                   }
                 }
-                return e;
+                return transformNext(i + 1, values);
               });
             }
-          },
-          rest(
-            [
-              {
-                pos: origin.pos,
-                expr: EVars(transformedVars)
-              }
-            ]));
+          }
+        }
+        return transformNext(0, []);
       }
       case EUntyped(e):
       {
@@ -464,7 +404,8 @@ class ContinuationDetail
           #if haxe_211
           case TAbstract(t, []):
           #else
-          case TInst(t, []):
+          case TInst(t, params):
+          if (params.length != 0) { false; } else
           #end
           {
             var voidType = t.get();
@@ -591,111 +532,26 @@ class ContinuationDetail
       }
       case ESwitch(e, cases, edef):
       {
-        if (edef == null)
+        return transform(e, function(eResult)
         {
-          edef =
+          var transformedCases = cases.map(function(c)
           {
-            pos: origin.pos,
-            expr: EBlock([])
-          }
-        }
-        var endSwitchName = "__endSwitch_" + seed++;
-        var endSwitchIdent = 
-        {
-          pos: origin.pos,
-          expr: EConst(CIdent(endSwitchName))
-        }
-        var numResults = 0;
-        var transformedSwitch = transform(e, function(eResults)
-        {
+            if (c.expr == null)
+            {
+              return { expr: rest([]), #if haxe_211 guard: c.guard, #end values: c.values };
+            }
+            else
+            {
+              return { expr: transform(c.expr, rest), #if haxe_211 guard: c.guard, #end values: c.values };
+            }
+          }).array();
+          var transformedDef = edef == null ? rest([]) : transform(edef, rest);
           return
           {
             pos: origin.pos,
-            expr: ESwitch(
-              unpack(eResults, e.pos),
-              cases.map(
-                function(caseBody)
-                {
-                  return
-                  {
-                    #if haxe_211
-                    guard: caseBody.guard,
-                    #end
-                    expr: transform(
-                      caseBody.expr,
-                      function(caseResults)
-                      {
-                        if (numResults < caseResults.length)
-                        {
-                          numResults = caseResults.length;
-                        }
-                        return
-                        {
-                          pos: caseBody.expr.pos,
-                          expr: ECall(endSwitchIdent, caseResults)
-                        };
-                      }),
-                    values: caseBody.values
-                  }
-                }
-              ).array(),
-              transform(
-                edef,
-                function(edefResults)
-                {
-                  if (numResults < edefResults.length)
-                  {
-                    numResults = edefResults.length;
-                  }
-                  return
-                  {
-                    pos: edef.pos,
-                    expr: ECall(endSwitchIdent, edefResults)
-                  };
-                }))
-          };
-        });
-        var endSwitchArgs = [];
-        var endSwitchArgIdents = [];
-        for (i in 0...numResults)
-        {
-          var switchResultName = "__switchResult_" + seed++;
-          endSwitchArgIdents.push(
-          {
-            pos: origin.pos,
-            expr: EConst(CIdent(switchResultName))
-          });
-          endSwitchArgs.push(
-            {
-              name: switchResultName,
-              opt: true,
-              type: null,
-              value: null
-            });
-        }        
-        var endSwitchFunction =
-        {
-          pos: origin.pos,
-          expr: EFunction(
-            endSwitchName,
-            {
-              ret: null,
-              params: [],
-              expr: rest(endSwitchArgIdents),
-              args: endSwitchArgs
-            })
-        }
-        return macro
-        {
-          $endSwitchFunction;
-          var __switchResult = null;
-          $transformedSwitch;
-          if (__switchResult != null)
-          {
-            $endSwitchIdent(__switchResult);
+            expr: ESwitch(unpack(eResult, e.pos), transformedCases, transformedDef),
           }
-        };
-
+        });
       }
       case EReturn(returnExpr):
       {
@@ -729,39 +585,41 @@ class ContinuationDetail
                       case ECall(e, originParams):
                       {
                         // 优化 e 是另一个异步函数的情况
-                        return transform(e, function(functionResult)
+                        function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
                         {
-                          var transformedParams = [];
-                          var result =
+                          if (i == originParams.length)
+                          {
+                            return transform(e, function(functionResult)
                             {
-                              iterator: function()
+                              transformedParameters.push(
                               {
-                                return 0...originParams.length;
-                              }
-                            }.fold(
-                              function(i, expr)
-                              {
-                                return transform(
-                                  originParams[i],
-                                  function(prefixResult:Array<Expr>):Expr
-                                  {
-                                    transformedParams.push(unpack(prefixResult, expr.pos));
-                                    return expr;
-                                  });
-                              },
+                                expr: EConst(CIdent("__return")),
+                                pos: origin.pos
+                              });
+                              return
                               {
                                 pos: origin.pos,
                                 expr: ECall(
                                   unpack(functionResult, origin.pos),
-                                  transformedParams)
-                              });
-                          transformedParams.push(
-                            {
-                              expr: EConst(CIdent("__return")),
-                              pos: origin.pos
+                                  transformedParameters),
+                              };
                             });
-                          return result;
-                        });
+                          }
+                          else
+                          {
+                            return transform(
+                              originParams[i],
+                              function(parameterResult:Array<Expr>):Expr
+                              {
+                                for (e in parameterResult)
+                                {
+                                  transformedParameters.push(e);
+                                }
+                                return transformNext(i + 1, transformedParameters);
+                              });
+                          }
+                        }
+                        return transformNext(0, []);
                       }
                       default:
                     }
@@ -795,53 +653,66 @@ class ContinuationDetail
       }
       case EObjectDecl(originFields):
       {
-        var transformedFields = [];
-        return originFields.fold(function(field, expr)
+        function transformNext(i:Int, transformedFields:Array<{ field : String, expr : Expr }>):Expr
         {
-          return transform(
-            field.expr,
-            function(fieldResult:Array<Expr>):Expr
-            {
-              for (fieldIdent in fieldResult)
-              {
-                transformedFields.push(
-                  {
-                    expr: fieldIdent,
-                    field: field.field
-                  });
-              }
-              return expr;
-            });
-        }, rest(
-          [
+          if (i == transformedFields.length)
+          {
+            return
             {
               pos: origin.pos,
-              expr: EObjectDecl(transformedFields)
-            }
-          ]));
+              expr: EObjectDecl(transformedFields),
+            };
+          }
+          else
+          {
+            var originField = originFields[i];
+            return transform(
+              originField.expr,
+              function(valueResult:Array<Expr>):Expr
+              {
+                for (e in valueResult)
+                {
+                  transformedFields.push(
+                    {
+                      field: originField.field,
+                      expr: unpack(valueResult, originField.expr.pos),
+                    });
+                }
+                return transformNext(i + 1, transformedFields);
+              });
+          }
+        }
+        return transformNext(0, []);
       }
-      case ENew(t, originValues):
+      case ENew(t, originParams):
       {
-        var transformedValues = [];
-        return originValues.fold(function(originValue, expr)
+        function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
         {
-          return transform(
-            originValue,
-            function(valueResults:Array<Expr>):Expr
-            {
-              for (valueResult in valueResults)
-              {
-                transformedValues.push(valueResult);
-              }
-              return expr;
-            });
-        }, rest(
-          [
+          if (i == originParams.length)
+          {
+            return
             {
               pos: origin.pos,
-              expr: ENew(t, transformedValues)
-            }
-          ]));
+              expr: ENew(
+                t,
+                transformedParameters),
+            };
+          }
+          else
+          {
+            return transform(
+              originParams[i],
+              function(parameterResult:Array<Expr>):Expr
+              {
+                for (e in parameterResult)
+                {
+                  transformedParameters.push(e);
+                }
+                return transformNext(i + 1, transformedParameters);
+              });
+          }
+        }
+        return transformNext(0, []);
       }
       case EIn(_, _):
       {
@@ -985,88 +856,97 @@ class ContinuationDetail
                 {
                   case ECall(e, originParams):
                   {
-                    return transform(e, function(functionResult)
+                    function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
                     {
-                      var handlerArgResult = [];
-                      var handlerArgDefs = [];
-                      switch (Context.typeof(unpack(functionResult, e.pos)))
+                      if (i == originParams.length)
                       {
-                        case TFun(args, _):
+                        return transform(e, function(functionResult)
                         {
-                          switch (args[args.length - 1].t)
+                          var handlerArgResult = [];
+                          var handlerArgDefs = [];
+                          switch (Context.typeof(unpack(functionResult, e.pos)))
                           {
                             case TFun(args, _):
                             {
-                              for (handlerArg in args)
+                              switch (args[args.length - 1].t)
                               {
-                                var name = "__parameter_" + seed++;
-                                handlerArgResult.push(
+                                case TFun(args, _):
+                                {
+                                  for (handlerArg in args)
                                   {
-                                    pos: origin.pos,
-                                    expr: EConst(CIdent(name))
-                                  });
-                                handlerArgDefs.push(
-                                  {
-                                    opt: handlerArg.opt,
-                                    name: name,
-                                    type: null,
-                                    value: null
-                                  });
+                                    var name = "__parameter_" + seed++;
+                                    handlerArgResult.push(
+                                      {
+                                        pos: origin.pos,
+                                        expr: EConst(CIdent(name))
+                                      });
+                                    handlerArgDefs.push(
+                                      {
+                                        opt: handlerArg.opt,
+                                        name: name,
+                                        type: null,
+                                        value: null
+                                      });
+                                  }
+                                }
+                                default:
+                                {
+                                  var name = "__parameter_" + seed++;
+                                  handlerArgResult.push(
+                                    {
+                                      pos: origin.pos,
+                                      expr: EConst(CIdent(name))
+                                    });
+                                  handlerArgDefs.push(
+                                    {
+                                      opt: true,
+                                      name: name,
+                                      type: null,
+                                      value: null
+                                    });
+                                }
                               }
                             }
                             default:
                             {
-                              var name = "__parameter_" + seed++;
-                              handlerArgResult.push(
-                                {
-                                  pos: origin.pos,
-                                  expr: EConst(CIdent(name))
-                                });
-                              handlerArgDefs.push(
-                                {
-                                  opt: true,
-                                  name: name,
-                                  type: null,
-                                  value: null
-                                });
+                              Context.error("First parameter of async() must be a function.", e.pos);
                             }
                           }
-                        }
-                        default:
-                        {
-                          Context.error("First parameter of async() must be a function.", e.pos);
-                        }
-                      }
-                      var parameters = [];
-                      var result =
-                        {
-                          iterator: function() { return 0...originParams.length; }
-                        }.fold(
-                          function(i, expr)
-                          {
-                            return transform(originParams[i], function(prefixResult:Array<Expr>):Expr
-                            {
-                              parameters.push(unpack(prefixResult, expr.pos));
-                              return expr;
-                            });
-                          },
+                          transformedParameters.push(
                           {
                             pos: origin.pos,
-                            expr: ECall(unpack(functionResult, origin.pos), parameters)
+                            expr: EFunction(null,
+                            {
+                              ret: null,
+                              params: [],
+                              expr: rest(handlerArgResult),
+                              args: handlerArgDefs
+                            })
                           });
-                      parameters.push(
-                        {
-                          pos: origin.pos,
-                          expr: EFunction(null,
+                          return
                           {
-                            ret: null,
-                            params: [],
-                            expr: rest(handlerArgResult),
-                            args: handlerArgDefs
-                          })
+                            pos: origin.pos,
+                            expr: ECall(
+                              unpack(functionResult, origin.pos),
+                              transformedParameters),
+                          };
                         });
-                      return result;
-                    });
+                      }
+                      else
+                      {
+                        return transform(
+                          originParams[i],
+                          function(parameterResult:Array<Expr>):Expr
+                          {
+                            for (e in parameterResult)
+                            {
+                              transformedParameters.push(e);
+                            }
+                            return transformNext(i + 1, transformedParameters);
+                          });
+                      }
+                    }
+                    return transformNext(0, []);
                   }
                   default:
                 }
@@ -1075,29 +955,39 @@ class ContinuationDetail
             default:
           }
         }
-        return transform(
-          e,
-          function(fResult):Expr
+        
+        function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
+        {
+          if (i == originParams.length)
           {
-            var transformedParams = [];
-            return originParams.fold(function(param, expr)
+            return transform(e, function(functionResult)
             {
-              return transform(param, function(paramResult:Array<Expr>):Expr
+              var handlerArgResult = [];
+              var handlerArgDefs = [];
+              return
               {
-                for (paramIdent in paramResult)
+                pos: origin.pos,
+                expr: ECall(
+                  unpack(functionResult, origin.pos),
+                  transformedParameters),
+              };
+            });
+          }
+          else
+          {
+            return transform(
+              originParams[i],
+              function(parameterResult:Array<Expr>):Expr
+              {
+                for (e in parameterResult)
                 {
-                  transformedParams.push(paramIdent);
+                  transformedParameters.push(e);
                 }
-                return expr;
+                return transformNext(i + 1, transformedParameters);
               });
-            }, rest(
-              [
-                {
-                  pos: origin.pos,
-                  expr: ECall(unpack(fResult, origin.pos), transformedParams)
-                }
-              ]));
-          });
+          }
+        }
+        return transformNext(0, []);
       }
       case EBreak:
       {
@@ -1159,28 +1049,33 @@ class ContinuationDetail
             });
           });
       }
-      case EArrayDecl(originValues):
+      case EArrayDecl(originParams):
       {
-        var transformedValues = [];
-        return originValues.fold(function(originValue, expr)
+        function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
         {
-          return transform(
-            originValue,
-            function(valueResults:Array<Expr>):Expr
-            {
-              for (valueResult in valueResults)
-              {
-                transformedValues.push(valueResult);
-              }
-              return expr;
-            });
-        }, rest(
-          [
+          if (i == originParams.length)
+          {
+            return
             {
               pos: origin.pos,
-              expr: EArrayDecl(transformedValues)
-            }
-          ]));
+              expr: EArrayDecl(transformedParameters),
+            };
+          }
+          else
+          {
+            return transform(
+              originParams[i],
+              function(parameterResult:Array<Expr>):Expr
+              {
+                for (e in parameterResult)
+                {
+                  transformedParameters.push(e);
+                }
+                return transformNext(i + 1, transformedParameters);
+              });
+          }
+        }
+        return transformNext(0, []);
       }
       case EArray(e1, e2):
       {
@@ -1204,7 +1099,27 @@ class ContinuationDetail
       }
     }
   }
+  
+  static var nextDelayedId = 0;
+  
+  static var delayFunctions(null, never):IntMap<Void->Expr> = new IntMap<Void->Expr>();
+  
+  static function delay(delayedFunction:Void->Expr):Expr
+  {
+    var id = nextDelayedId++;
+    var idExpr = Context.makeExpr(id, Context.currentPos());
+    delayFunctions.set(id, delayedFunction);
+    return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.runDelayedFunction($idExpr);
+  }
+  
   #end
+  
+  @:noUsing @:macro public static function runDelayedFunction(id:Int):Expr
+  {
+    var f = delayFunctions.get(id);
+    delayFunctions.remove(id);
+    return f();
+  }
   
   @:noUsing @:macro public static function cps(body:Expr):Expr
   {

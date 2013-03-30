@@ -9,11 +9,10 @@ using com.dongxiguo.continuation.Continuation;
 class TestContinuation 
 {
   
-  static var joiner:Counter = null;
   @cps static function forkJoin():Int
   {
     var a = [1, 2, 3, 4];
-    var joiner:Counter = new Counter(a.length);
+    var joiner = new Counter(a.length);
     Lambda.iter(a).async();
     trace(a);
     read(4).async();
@@ -231,7 +230,7 @@ class TestContinuation
       return asyncDo().async();
       return 2;
     });
-    Continuation.cpsFunction(function myFunction():Int
+    Continuation.cpsFunction(function myFunction33():Int
     {
       if (asyncDo().async() == 0)
       {
@@ -241,7 +240,7 @@ class TestContinuation
       {
         return asyncDo().async();
       }
-        
+      var a = (asyncDo().async() == 0 ? 1 : 2);
       return (if (asyncDo().async() == 0)
         {
           return 2;
