@@ -93,7 +93,11 @@ class Continuation
                 originExpr,
                 function(transformed)
                 {
-                  transformed.push(macro __return());
+                  transformed.push(
+                  {
+                    expr: ECall(macro __return, []),
+                    pos: originExpr.pos,
+                  });
                   return
                   {
                     pos: originExpr.pos,
@@ -124,6 +128,7 @@ class Continuation
       {
         case FFun(f):
         {
+          var originReturnType = f.ret;
           for (m in field.meta)
           {
             if (m.name == metaName)
@@ -134,8 +139,8 @@ class Continuation
                     name: "__return",
                     opt: false,
                     value: null,
-                    type: f.ret == null ? null : TFunction(
-                      [ f.ret ],
+                    type: originReturnType == null ? null : TFunction(
+                      [ originReturnType ],
                       TPath(
                         {
                           sub: null,
@@ -157,7 +162,11 @@ class Continuation
                 originExpr,
                 function(transformed)
                 {
-                  transformed.push(macro __return());
+                  transformed.push(
+                  {
+                    expr: ECall(macro __return, []),
+                    pos: originExpr.pos,
+                  });
                   return
                   {
                     pos: originExpr.pos,
@@ -214,17 +223,19 @@ class ContinuationDetail
           expr: EIf(
             unpack(econdResult, econd.pos),
             transform(eif, rest),
-            eelse == null ? null : transform(eelse, rest)),
+            eelse == null ? rest([]) : transform(eelse, rest)),
         };
       });
   }
 
   public static function transform(origin:Expr, rest:Array<Expr>->Expr):Expr
   {
-    return delay(function()
-    {
-      return transformNoDelay(origin, rest);
-    });
+    return delay(
+      origin.pos,
+      function()
+      {
+        return transformNoDelay(origin, rest);
+      });
   }
     
   static function transformNoDelay(origin:Expr, rest:Array<Expr>->Expr):Expr
@@ -315,11 +326,12 @@ class ContinuationDetail
               var originVar = originVars[i];
               newVars.push({ type: originVar.type, name: originVar.name, expr: valueExpr, });
             }
-            return
-            {
+            var varExpr = {
               pos: origin.pos,
               expr: EVars(newVars),
             };
+            var restExpr = rest([]);
+            return macro { $varExpr; $restExpr; }
           }
           else
           {
@@ -415,7 +427,7 @@ class ContinuationDetail
           pos: origin.pos,
           expr: EConst(CIdent(endTryName))
         }
-        var isVoidTry = switch (Context.typeof(e))
+        var isVoidTry = switch (Context.follow(Context.typeof(e)))
         {
           #if haxe_211
           case TAbstract(t, []):
@@ -612,13 +624,15 @@ class ContinuationDetail
                                 expr: EConst(CIdent("__return")),
                                 pos: origin.pos
                               });
-                              return
-                              {
-                                pos: origin.pos,
-                                expr: ECall(
-                                  unpack(functionResult, origin.pos),
-                                  transformedParameters),
-                              };
+                              return rest(
+                              [
+                                {
+                                  pos: origin.pos,
+                                  expr: ECall(
+                                    unpack(functionResult, origin.pos),
+                                    transformedParameters),
+                                }
+                              ]);
                             });
                           }
                           else
@@ -673,11 +687,13 @@ class ContinuationDetail
         {
           if (i == transformedFields.length)
           {
-            return
-            {
-              pos: origin.pos,
-              expr: EObjectDecl(transformedFields),
-            };
+            return rest(
+            [
+              {
+                pos: origin.pos,
+                expr: EObjectDecl(transformedFields),
+              }
+            ]);
           }
           else
           {
@@ -706,13 +722,15 @@ class ContinuationDetail
         {
           if (i == originParams.length)
           {
-            return
-            {
-              pos: origin.pos,
-              expr: ENew(
-                t,
-                transformedParameters),
-            };
+            return rest(
+            [
+              {
+                pos: origin.pos,
+                expr: ENew(
+                  t,
+                  transformedParameters),
+              }
+            ]);
           }
           else
           {
@@ -880,7 +898,7 @@ class ContinuationDetail
                         {
                           var handlerArgResult = [];
                           var handlerArgDefs = [];
-                          switch (Context.typeof(unpack(functionResult, e.pos)))
+                          switch (Context.follow(Context.typeof(unpack(functionResult, e.pos))))
                           {
                             case TFun(args, _):
                             {
@@ -971,7 +989,6 @@ class ContinuationDetail
             default:
           }
         }
-        
         function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
         {
           if (i == originParams.length)
@@ -980,13 +997,13 @@ class ContinuationDetail
             {
               var handlerArgResult = [];
               var handlerArgDefs = [];
-              return
+              return rest([
               {
                 pos: origin.pos,
                 expr: ECall(
                   unpack(functionResult, origin.pos),
                   transformedParameters),
-              };
+              }]);
             });
           }
           else
@@ -1015,34 +1032,26 @@ class ContinuationDetail
         {
           return rest([]);
         }
-        function next(blockLineIndex:Int, line:Array<Expr>):Expr
+        function transformNext(i:Int):Expr
         {
-          if (blockLineIndex == exprs.length - 1)
+          if (i == exprs.length - 1)
           {
-            return
-            {
-              pos: origin.pos,
-              expr: EBlock(
-                line.concat(
-                  [
-                    transform(exprs[blockLineIndex], rest)
-                  ]))
-            };
+            return transform(exprs[i], rest);
           }
           else
           {
-            return
+            return transform(exprs[i], function(transformedLine)
             {
-              pos: origin.pos,
-              expr: EBlock(
-                line.concat(
-                  [
-                    transform(exprs[blockLineIndex], callback(next, blockLineIndex + 1))
-                  ]))
-            };
+              transformedLine.push(transformNext(i + 1));
+              return
+              {
+                pos: origin.pos,
+                expr: EBlock(transformedLine),
+              }
+            });
           }
         }
-        return next(0, []);
+        return transformNext(0);
       }
       case EBinop(op, e1, e2):
       {
@@ -1071,11 +1080,13 @@ class ContinuationDetail
         {
           if (i == originParams.length)
           {
-            return
-            {
-              pos: origin.pos,
-              expr: EArrayDecl(transformedParameters),
-            };
+            return rest(
+            [
+              {
+                pos: origin.pos,
+                expr: EArrayDecl(transformedParameters),
+              }
+            ]);
           }
           else
           {
@@ -1120,12 +1131,16 @@ class ContinuationDetail
   
   static var delayFunctions(null, never):IntMap<Void->Expr> = new IntMap<Void->Expr>();
   
-  static function delay(delayedFunction:Void->Expr):Expr
+  static function delay(pos:Position, delayedFunction:Void->Expr):Expr
   {
     var id = nextDelayedId++;
     var idExpr = Context.makeExpr(id, Context.currentPos());
     delayFunctions.set(id, delayedFunction);
-    return macro com.dongxiguo.continuation.Continuation.ContinuationDetail.runDelayedFunction($idExpr);
+    return
+    {
+      pos: pos,
+      expr: ECall(macro com.dongxiguo.continuation.Continuation.ContinuationDetail.runDelayedFunction, [idExpr]),
+    }
   }
   
   #end
@@ -1133,7 +1148,7 @@ class ContinuationDetail
   @:noUsing @:macro public static function runDelayedFunction(id:Int):Expr
   {
     var f = delayFunctions.get(id);
-    delayFunctions.remove(id);
+    //delayFunctions.remove(id);
     return f();
   }
 

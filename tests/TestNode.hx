@@ -26,6 +26,7 @@ class TestNode
       }
       totalWritten += written;
     }
+    return null;
   }
   
   /**
