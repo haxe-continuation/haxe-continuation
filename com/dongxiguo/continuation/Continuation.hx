@@ -89,9 +89,17 @@ class Continuation
                         }))
                   }
                 ]),
-              expr:
-                macro com.dongxiguo.continuation.Continuation.ContinuationDetail
-                .cps($originExpr)
+              expr: ContinuationDetail.transform(
+                originExpr,
+                function(transformed)
+                {
+                  transformed.push(macro __return());
+                  return
+                  {
+                    pos: originExpr.pos,
+                    expr: EBlock(transformed),
+                  }
+                })
             })
         };
       }
@@ -145,9 +153,17 @@ class Continuation
                   name: "Void"
                 });
               var originExpr = f.expr;
-              f.expr =
-                macro com.dongxiguo.continuation.Continuation.ContinuationDetail
-                .cps($originExpr);
+              f.expr = ContinuationDetail.transform(
+                originExpr,
+                function(transformed)
+                {
+                  transformed.push(macro __return());
+                  return
+                  {
+                    pos: originExpr.pos,
+                    expr: EBlock(transformed),
+                  }
+                });
               break;
             }
           }
@@ -203,7 +219,7 @@ class ContinuationDetail
       });
   }
 
-  static function transform(origin:Expr, rest:Array<Expr>->Expr):Expr
+  public static function transform(origin:Expr, rest:Array<Expr>->Expr):Expr
   {
     return delay(function()
     {
@@ -1120,19 +1136,6 @@ class ContinuationDetail
     delayFunctions.remove(id);
     return f();
   }
-  
-  @:noUsing @:macro public static function cps(body:Expr):Expr
-  {
-    return transform(
-      body,
-      function(exprs: Array<Expr>):Expr
-      {
-        return
-        {
-          pos: body.pos,
-          expr: EBlock(exprs.concat([macro (cast __return)()]))
-        }
-      });
-  }
+
 }
 
