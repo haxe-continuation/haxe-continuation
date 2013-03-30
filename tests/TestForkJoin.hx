@@ -20,7 +20,7 @@ class TestForkJoin
     var result =
     {
       var threadId, collect = childrenIds.startCollectors().async();
-      trace("Start thread #" + threadId);
+      trace("Start thread #" + parentId + "." + threadId);
       
       trace("Thread #" + parentId + "." + threadId + " is going to sleep.");
       sleep(Std.int(Math.random() * 5000.0)).async();
