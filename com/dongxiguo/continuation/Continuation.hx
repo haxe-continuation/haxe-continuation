@@ -35,15 +35,11 @@ import haxe.macro.Type;
 import haxe.macro.Expr;
 #end
 using Lambda;
-#if haxe3
-import haxe.ds.IntMap;
-#else
-private typedef IntMap<Element> = IntHash<Element>;
-#end
 
 /**
  * @author 杨博 <pop.atry@gmail.com>
  */
+@:final
 class Continuation 
 {
   /**
@@ -192,6 +188,7 @@ class Continuation
  * For internal use only. Don't access it immediately.
  * @private
  */
+@:final
 class ContinuationDetail
 {
   #if macro
