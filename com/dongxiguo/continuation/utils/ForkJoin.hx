@@ -6,7 +6,9 @@ package com.dongxiguo.continuation.utils;
 class ForkJoin
 {
 
-  public static function startCollectors<Identifier, Result>(collectorIdentifiers: Iterable<Identifier>, handler:Identifier->CollectFunction<Result>->Void):Void
+  public static function startCollectors<Identifier, Result>(
+    collectorIdentifiers: Iterable<Identifier>,
+    handler:Identifier->CollectFunction<Result>->Void):Void
   {
     var counter = 1;
     var results:Array<Result> = [];
@@ -44,7 +46,9 @@ class ForkJoin
 
   }
   
-  public static function fork<Identifier>(threadIdentifiers: Iterable<Identifier>, handler:Identifier->JoinFunction->Void):Void
+  public static function fork<Identifier>(
+    threadIdentifiers: Iterable<Identifier>,
+    handler:Identifier->JoinFunction->Void):Void
   {
     var counter = 1;
     var quickJoinHandler = null;
