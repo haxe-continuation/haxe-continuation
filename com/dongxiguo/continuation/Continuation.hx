@@ -459,6 +459,19 @@ class ContinuationDetail
           pos: origin.pos,
           expr: EConst(CIdent(endTryName))
         }
+        var isVoidTry = switch (Context.typeof(e))
+        {
+          #if haxe_211
+          case TAbstract(t, []):
+          #else
+          case TInst(t, []):
+          #end
+          {
+            var voidType = t.get();
+            voidType.module == "StdTypes" && voidType.name == "Void";
+          }
+          default: false;
+        }
         var tryResultName = "__tryResult_" + seed++;
         var tryResultIdent =
         {
@@ -473,8 +486,8 @@ class ContinuationDetail
             {
               ret: null,
               params: [],
-              expr: rest([ tryResultIdent ]),
-              args:
+              expr: rest(isVoidTry ? [] : [ tryResultIdent ]),
+              args: isVoidTry ? [] : 
               [
                 {
                   name: tryResultName,
@@ -485,10 +498,11 @@ class ContinuationDetail
               ]
             })
         }
+        var tryBody = isVoidTry ? (macro { $e; __noException = true; }) : (macro { $tryResultIdent = $e; __noException = true; });
         var transformedTry = 
         {
           pos: origin.pos,
-          expr: ETry(macro { __tryResult = $e; __noException = true; }, catches.map(
+          expr: ETry(tryBody, catches.map(
             function(catchBody)
             {
               return
@@ -505,7 +519,7 @@ class ContinuationDetail
                         {
                           pos: catchBody.expr.pos,
                           expr: ECall(
-                            endTryIdent,
+                            endTryIdent, isVoidTry ? [] :
                             [
                               {
                                 pos: catchBody.expr.pos,
@@ -532,17 +546,29 @@ class ContinuationDetail
             }
           ).array())
         }
-        return macro
-        {
-          $endTryFunction;
-          var __noException = false;
-          var __tryResult = cast null;
-          $transformedTry;
-          if (__noException)
+        return
+          isVoidTry ?
+          macro
           {
-            $endTryIdent(__tryResult);
-          }
-        };
+            $endTryFunction;
+            var __noException = false;
+            $transformedTry;
+            if (__noException)
+            {
+              $endTryIdent();
+            }
+          } :
+          macro
+          {
+            $endTryFunction;
+            var __noException = false;
+            var $tryResultName = cast null;
+            $transformedTry;
+            if (__noException)
+            {
+              $endTryIdent($tryResultIdent);
+            }
+          };
       }
       case EThrow(e):
       {
@@ -961,46 +987,55 @@ class ContinuationDetail
                   {
                     return transform(e, function(functionResult)
                     {
-                      var handlerArgs =
-                        switch (Context.typeof(unpack(functionResult, e.pos)))
-                        {
-                          case TFun(args, _):
-                          {
-                            switch (args[args.length - 1].t)
-                            {
-                              case TFun(args, _):
-                              {
-                                args;
-                              }
-                              default:
-                              {
-                                throw "First parameter of async() must be a function whose last parameter is a handler.";
-                              }
-                            }
-                          }
-                          default:
-                          {
-                            throw "First parameter of async() must be a function";
-                          }
-                        }
                       var handlerArgResult = [];
                       var handlerArgDefs = [];
-                      for (i in 0...handlerArgs.length)
+                      switch (Context.typeof(unpack(functionResult, e.pos)))
                       {
-                        var handlerArg = handlerArgs[i];
-                        var name = "__parameter_" + seed++;
-                        handlerArgResult[i] =
+                        case TFun(args, _):
+                        {
+                          switch (args[args.length - 1].t)
                           {
-                            pos: origin.pos,
-                            expr: EConst(CIdent(name))
-                          };
-                        handlerArgDefs[i] =
-                          {
-                            opt: handlerArg.opt,
-                            name: name,
-                            type: null,
-                            value: null
-                          };
+                            case TFun(args, _):
+                            {
+                              for (handlerArg in args)
+                              {
+                                var name = "__parameter_" + seed++;
+                                handlerArgResult.push(
+                                  {
+                                    pos: origin.pos,
+                                    expr: EConst(CIdent(name))
+                                  });
+                                handlerArgDefs.push(
+                                  {
+                                    opt: handlerArg.opt,
+                                    name: name,
+                                    type: null,
+                                    value: null
+                                  });
+                              }
+                            }
+                            default:
+                            {
+                              var name = "__parameter_" + seed++;
+                              handlerArgResult.push(
+                                {
+                                  pos: origin.pos,
+                                  expr: EConst(CIdent(name))
+                                });
+                              handlerArgDefs.push(
+                                {
+                                  opt: true,
+                                  name: name,
+                                  type: null,
+                                  value: null
+                                });
+                            }
+                          }
+                        }
+                        default:
+                        {
+                          Context.error("First parameter of async() must be a function.", e.pos);
+                        }
                       }
                       var parameters = [];
                       var result =
