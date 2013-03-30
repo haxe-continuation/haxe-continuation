@@ -20,13 +20,13 @@ class TestForkJoin
     var result =
     {
       var threadId, collect = childrenIds.startCollectors().async();
-      trace("Start thread #" + parentId + "." + threadId);
+      trace("Start sub-thread #" + parentId + "." + threadId);
       
-      trace("Thread #" + parentId + "." + threadId + " is going to sleep.");
+      trace("Sub-thread #" + parentId + "." + threadId + " is going to sleep.");
       sleep(Std.int(Math.random() * 5000.0)).async();
-      trace("Thread #" + parentId + "." + threadId + " is waken up.");
+      trace("Sub-thread #" + parentId + "." + threadId + " is waken up.");
       
-      trace("Collect data from thread #" + parentId + "." + threadId + "...");
+      trace("Collecting data from sub-thread #" + parentId + "." + threadId + "...");
       collect(threadId * parentId).async();
     }
     trace("All sub-threads of #" + parentId + " are joint.");
