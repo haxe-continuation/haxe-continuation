@@ -66,7 +66,7 @@ tests/Sample.hx \
 	haxe -js $@ -main tests.Sample
 
 haxedoc.xml: com/dongxiguo/continuation/Continuation.hx
-	haxe -xml $@ $< --dead-code-elimination
+	haxe -xml $@ $<
 
 bin:
 	mkdir $@
