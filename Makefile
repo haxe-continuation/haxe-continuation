@@ -1,11 +1,12 @@
-all: release.zip
-
-release.zip: \
+all release.zip: \
 haxelib.xml \
 haxedoc.xml \
 LICENSE \
 com/dongxiguo/continuation/Continuation.hx
+
+release.zip:
 	 zip -u $@ $^
+
 
 clean:
 	$(RM) -r bin release.zip haxedoc.xml
