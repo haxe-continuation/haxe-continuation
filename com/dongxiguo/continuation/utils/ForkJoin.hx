@@ -35,7 +35,9 @@ package com.dongxiguo.continuation.utils;
 @:final
 class ForkJoin
 {
-
+  /**
+    Like <code>fork</code>, but returns a <code>CollectFunction</code> instead of <code>JoinFunction</code>.
+   **/
   public static function startCollectors<Identifier, Result>(
     collectorIdentifiers: Iterable<Identifier>,
     handler:Identifier->CollectFunction<Result>->Void):Void
@@ -76,6 +78,12 @@ class ForkJoin
 
   }
   
+  /**
+    Fork threads for every element in <code>threadIdentifiers</code>.
+    @param handler The callback function invoked for each element in <code>threadIdentifiers</code>.
+    The <code>handler</code> can receive two parameters:
+    the element in <code>threadIdentifiers</code> and the <code>JoinFunction</code>.
+   **/
   public static function fork<Identifier>(
     threadIdentifiers: Iterable<Identifier>,
     handler:Identifier->JoinFunction->Void):Void
@@ -114,6 +122,8 @@ class ForkJoin
   
 }
 
+/** The function should be invoke when the thread exit. The execution only continues if all child threads have invoked their `JoinFunction`. */
 typedef JoinFunction = (Void->Void)->Void;
 
+/** Like <code>JoinFunction</code>, but will collect all results from each child threads into an array. */
 typedef CollectFunction<Result> = Result->(Array<Result>->Void)->Void;

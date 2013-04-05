@@ -37,16 +37,16 @@ import haxe.macro.Expr;
 using Lambda;
 
 /**
- * @author 杨博 <pop.atry@gmail.com>
- */
+  @author 杨博 <pop.atry@gmail.com>
+**/
 @:final
 class Continuation 
 {
   /**
-   * Wrap a function to CPS function.
-   *
-   * In wrapped function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
-   */
+    Wrap a function to CPS function.
+
+    In wrapped function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
+   **/
   @:macro public static function cpsFunction(expr:Expr):Expr
   {
     switch (expr.expr)
@@ -111,10 +111,10 @@ class Continuation
   }
 
   /**
-   * When you add <code>@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("metaName"))</code> in front of a class, any method with same metadata name from <code>metaName</code> in that class will be transfromed to CPS function.
-   *
-   * In these methods, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
-   */
+    When you add <code>@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("metaName"))</code> in front of a class, any method with same metadata name from <code>metaName</code> in that class will be transfromed to CPS function.
+
+    In these methods, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
+  **/
   @:noUsing @:macro public static function cpsByMeta(metaName:String):Array<Field>
   {
     var bf = Context.getBuildFields();
@@ -185,9 +185,9 @@ class Continuation
 }
 
 /**
- * For internal use only. Don't access it immediately.
- * @private
- */
+  For internal use only. Don't access it immediately.
+  @private
+**/
 @:final
 class ContinuationDetail
 {

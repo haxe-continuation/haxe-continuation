@@ -18,6 +18,7 @@ bin/TestNode.js
 
 bin/TestContinuation.n: \
 com/dongxiguo/continuation/Continuation.hx \
+com/dongxiguo/continuation/utils/ForkJoin.hx \
 tests/TestContinuation.hx \
 | bin
 	haxe -neko $@ -main tests.TestContinuation
@@ -66,8 +67,11 @@ tests/Sample.hx \
 | bin
 	haxe -js $@ -main tests.Sample
 
-haxedoc.xml: com/dongxiguo/continuation/Continuation.hx
-	haxe -xml $@ $<
+
+haxedoc.xml: \
+com/dongxiguo/continuation/Continuation.hx \
+com/dongxiguo/continuation/utils/ForkJoin.hx
+	haxe -xml $@ $^
 
 bin:
 	mkdir $@
