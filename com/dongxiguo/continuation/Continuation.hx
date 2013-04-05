@@ -621,15 +621,13 @@ class ContinuationDetail
                                 expr: EConst(CIdent("__return")),
                                 pos: origin.pos
                               });
-                              return rest(
-                              [
-                                {
-                                  pos: origin.pos,
-                                  expr: ECall(
-                                    unpack(functionResult, origin.pos),
-                                    transformedParameters),
-                                }
-                              ]);
+                              return 
+                              {
+                                pos: origin.pos,
+                                expr: ECall(
+                                  unpack(functionResult, origin.pos),
+                                  transformedParameters),
+                              };
                             });
                           }
                           else
