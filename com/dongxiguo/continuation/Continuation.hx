@@ -680,7 +680,7 @@ class ContinuationDetail
       {
         function transformNext(i:Int, transformedFields:Array<{ field : String, expr : Expr }>):Expr
         {
-          if (i == transformedFields.length)
+          if (i == originFields.length)
           {
             return rest(
             [
