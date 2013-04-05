@@ -43,12 +43,13 @@ class TestForkJoin
     Timer.delay(handler, time_ms);
   }
 
-  @:cps public static function startWorkers(parentId:Int, childrenIds:Array<Int>):Array<Int>
+  /** Start 4 worker threads. Every worker is a collector. */
+  @:cps public static function startWorkerThreads(parentId:Int, childrenIds:Array<Int>):Array<Int>
   {
     trace("Before fork");
-    var result =
+    var threadId, collect = childrenIds.startCollectors().async();
+    var result = collect(
     {
-      var threadId, collect = childrenIds.startCollectors().async();
       trace("Start sub-thread #" + parentId + "." + threadId);
       
       trace("Sub-thread #" + parentId + "." + threadId + " is going to sleep.");
@@ -56,13 +57,15 @@ class TestForkJoin
       trace("Sub-thread #" + parentId + "." + threadId + " is waken up.");
       
       trace("Collecting data from sub-thread #" + parentId + "." + threadId + "...");
-      collect(threadId * parentId).async();
-    }
-    trace("All sub-threads of #" + parentId + " are joint.");
+      
+      threadId * parentId;
+    }).async();
+    trace("All sub-threads of #" + parentId + " are joined.");
     return result;
   }
   
-  @:cps public static function startManagers():Void
+  /** Start 4 manager threads. Every manager manages 6 workers. */
+  @:cps public static function startManagerThreads():Void
   {
     var threadIds = [ 0, 1, 2, 3 ];
     trace("Before fork");
@@ -70,17 +73,17 @@ class TestForkJoin
       var threadId, join = threadIds.fork().async();
       trace("Start thread #" + threadId);
       
-      trace("Data from sub-threads of #" + threadId + ": " + startWorkers(threadId, [0, 1, 2, 3, 4, 5]).async());
+      trace("Data from sub-threads of #" + threadId + ": " + startWorkerThreads(threadId, [0, 1, 2, 3, 4, 5]).async());
       
       trace("Joining thread #" + threadId + "...");
       join().async();
     }
-    trace("All threads are joint.");
+    trace("All threads are joined.");
   }
 
   public static function main()
   {
-    startManagers(function() { trace("Test is done."); } );
+    startManagerThreads(function() { trace("All tests is done."); } );
     trace("All threads are started.");
   }
   
