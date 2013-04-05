@@ -333,7 +333,6 @@ class ContinuationDetail
           else
           {
             var originVar = originVars[i];
-            values.push(null);
             if (originVar.expr == null)
             {
               return transformNext(i + 1, values);
@@ -342,6 +341,7 @@ class ContinuationDetail
             {
               return transform(originVar.expr, function(varResult)
               {
+                var v = values.concat([]);
                 if (i + 1 < varResult.length)
                 {
                   return Context.error(
@@ -351,9 +351,9 @@ class ContinuationDetail
                 for (j in 0...varResult.length)
                 {
                   var slot = j + i + 1 - varResult.length;
-                  if (values[slot] == null)
+                  if (v[slot] == null)
                   {
-                    values[slot] = varResult[j];
+                    v[slot] = varResult[j];
                   }
                   else
                   {
@@ -362,7 +362,7 @@ class ContinuationDetail
                       origin.pos);
                   }
                 }
-                return transformNext(i + 1, values);
+                return transformNext(i + 1, v);
               });
             }
           }

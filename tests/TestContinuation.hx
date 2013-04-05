@@ -76,7 +76,6 @@ class TestContinuation
   }
   @cps static function void1(n:Int):Void
   {
-    TestForkJoin.testForkJoin().async();
     return;
   }
   
@@ -154,7 +153,9 @@ class TestContinuation
             var a, b = switch (read(3).async())
             {
               case 2:
-                tuple2(2, x.asdf).async();
+                tuple2(2, 3).async();
+              default:
+                tuple2(1, 5).async();
             }
           }
         }
