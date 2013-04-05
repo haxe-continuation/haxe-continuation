@@ -43,7 +43,7 @@ class ForkJoin
     handler:Identifier->CollectFunction<Result>->Void):Void
   {
     var counter = 1;
-    var results:Array<Result> = [];
+    var results:Array<Null<Result>> = [];
     var quickCollectHandler = null;
     var i = 0;
     for (id in collectorIdentifiers)
