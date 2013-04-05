@@ -1,8 +1,5 @@
 -cp .
 -lib nodejs
--swf bin/TestNode.swf
--swf-header 0:0:0:FFFFFF
---flash-strict
--swf-version 11
+-js bin/TestNode.js
 -D nativeTrace
--main tests.TestForkJoin
+-main tests.TestNode
