@@ -42,6 +42,10 @@ class ForkJoin
     collectorIdentifiers: Iterable<Identifier>,
     handler:Identifier->CollectFunction<Result>->Void):Void
   {
+    if (Lambda.empty(collectorIdentifiers))
+    {
+      throw "collectorIdentifiers must not be empty!";
+    }
     var counter = 1;
     var results:Array<Null<Result>> = [];
     var quickCollectHandler = null;
@@ -88,6 +92,10 @@ class ForkJoin
     threadIdentifiers: Iterable<Identifier>,
     handler:Identifier->JoinFunction->Void):Void
   {
+    if (Lambda.empty(threadIdentifiers))
+    {
+      throw "threadIdentifiers must not be empty!";
+    }
     var counter = 1;
     var quickJoinHandler = null;
     for (id in threadIdentifiers)
