@@ -1122,8 +1122,6 @@ class ContinuationDetail
     }
   }
   
-  static var nextDelayedId = 0;
-  
   @:isVar
   static var delayFunctions(get_delayFunctions, set_delayFunctions):Array<Void->Expr>;
 
@@ -1140,7 +1138,6 @@ class ContinuationDetail
         function(allType)
         {
           delayFunctions = null;
-          nextDelayedId = 0;
         });
       return delayFunctions = [];
     }
