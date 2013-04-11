@@ -31,6 +31,7 @@ package com.dongxiguo.continuation;
 
 #if macro
 import haxe.macro.Context;
+import haxe.macro.ExprTools;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 #end
@@ -105,7 +106,7 @@ class Continuation
       }
       default:
       {
-        throw "CPS.cpsFunction expect a function as parameter.";
+        throw "Expect function.";
       }
     }
   }
@@ -788,8 +789,8 @@ class ContinuationDetail
                 var __iterator = null;
                 {
                   inline function setIterator<T>(
-                    iterable:Iterable<T> = null,
-                    iterator:Iterator<T> = null):Void
+                    ?iterator:Iterator<T> = null,
+                    ?iterable:Iterable<T> = null):Void
                   {
                     __iterator = iterable != null ? iterable.iterator() : iterator;
                   }
@@ -805,7 +806,7 @@ class ContinuationDetail
           }
           default:
           {
-            Context.error("Expect \"in\" in \"for\".", it.pos);
+            Context.error("Expect \"e1 in e2\"", it.pos);
             return null;
           }
         }
@@ -889,11 +890,20 @@ class ContinuationDetail
                     {
                       if (i == originParams.length)
                       {
-                        return transform(e, function(functionResult)
+                        return transformNoDelay(e, function(functionResult)
                         {
+                          var transformedCalleeExpr = unpack(functionResult, e.pos);
+                          var typingExpr = switch (transformedCalleeExpr)
+                          {
+                            case { expr: EField( { expr: EConst(CIdent("super")) }, fieldName) } :
+                            {
+                              macro this.$fieldName;
+                            }
+                            default: transformedCalleeExpr;
+                          }
                           var handlerArgResult = [];
                           var handlerArgDefs = [];
-                          switch (Context.follow(Context.typeof(unpack(functionResult, e.pos))))
+                          switch (Context.follow(Context.typeof(typingExpr)))
                           {
                             case TFun(args, _):
                             {
@@ -956,14 +966,14 @@ class ContinuationDetail
                           {
                             pos: origin.pos,
                             expr: ECall(
-                              unpack(functionResult, origin.pos),
+                              transformedCalleeExpr,
                               transformedParameters),
                           };
                         });
                       }
                       else
                       {
-                        return transform(
+                        return transformNoDelay(
                           originParams[i],
                           function(parameterResult:Array<Expr>):Expr
                           {
@@ -1050,24 +1060,38 @@ class ContinuationDetail
       }
       case EBinop(op, e1, e2):
       {
-        return transform(
-          e1,
-          function(e1Result)
+        switch (op)
+        {
+          case OpBoolOr:
           {
-            return transform(e2, function(e2Result)
-            {
-              return rest(
-                [
-                  {
-                    pos: origin.pos,
-                    expr: EBinop(
-                      op,
-                      unpack(e1Result, e1.pos),
-                      unpack(e2Result, e2.pos))
-                  }
-                ]);
-            });
-          });
+            return transformNoDelay(macro $e1 ? true : $e2 ? true : false, rest);
+          }
+          case OpBoolAnd:
+          {
+            return transformNoDelay(macro $e1 ? $e2 ? true : false : false, rest);
+          }
+          default:
+          {
+            return transform(
+              e1,
+              function(e1Result)
+              {
+                return transform(e2, function(e2Result)
+                {
+                  return rest(
+                    [
+                      {
+                        pos: origin.pos,
+                        expr: EBinop(
+                          op,
+                          unpack(e1Result, e1.pos),
+                          unpack(e2Result, e2.pos))
+                      }
+                    ]);
+                });
+              });
+          }
+        }
       }
       case EArrayDecl(originParams):
       {
