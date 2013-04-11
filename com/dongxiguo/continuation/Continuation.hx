@@ -1140,6 +1140,7 @@ class ContinuationDetail
         function(allType)
         {
           delayFunctions = null;
+          nextDelayedId = 0;
         });
       return delayFunctions = [];
     }
