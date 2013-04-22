@@ -70,7 +70,7 @@ class TestForkJoin
     var threadIds = [ 0, 1, 2, 3 ];
     trace("Before fork");
     {
-      var threadId, join = threadIds.fork().async();
+      var threadId, join = threadIds.startThreads().async();
       trace("Start thread #" + threadId);
       
       trace("Data from sub-threads of #" + threadId + ": " + startWorkerThreads(threadId, [0, 1, 2, 3, 4, 5]).async());

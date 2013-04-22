@@ -35,9 +35,23 @@ package com.dongxiguo.continuation.utils;
 @:final
 class ForkJoin
 {
+  /** Usage: <code>return ForkJoin.hang().async();</code> */
+  @:noUsing
+  @:extern public static inline function hang(handler:Dynamic):Void
+  {
+  }
+
+  @:noUsing
+  public static function fork(handler:Bool->Void):Void
+  {
+    handler(true);
+    handler(false);
+  }
+  
   /**
     Like <code>fork</code>, but returns a <code>CollectFunction</code> instead of <code>JoinFunction</code>.
    **/
+  @:noUsing
   public static function startCollectors<Identifier, Result>(
     collectorIdentifiers: Iterable<Identifier>,
     handler:Identifier->CollectFunction<Result>->Void):Void
@@ -88,7 +102,8 @@ class ForkJoin
     The <code>handler</code> can receive two parameters:
     the element in <code>threadIdentifiers</code> and the <code>JoinFunction</code>.
    **/
-  public static function fork<Identifier>(
+  @:noUsing
+  public static function startThreads<Identifier>(
     threadIdentifiers: Iterable<Identifier>,
     handler:Identifier->JoinFunction->Void):Void
   {
