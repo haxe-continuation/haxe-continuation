@@ -31,7 +31,6 @@ package com.dongxiguo.continuation;
 
 #if macro
 import haxe.macro.Context;
-import haxe.macro.ExprTools;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 #end
@@ -211,7 +210,7 @@ class ContinuationDetail
     eif:Expr,
     eelse:Null<Expr>, rest:Array<Expr>->Expr):Expr
   {
-    return transform(
+    return transformNoDelay(
       econd,
       function(econdResult)
       {
@@ -220,8 +219,8 @@ class ContinuationDetail
           pos: pos,
           expr: EIf(
             unpack(econdResult, econd.pos),
-            transform(eif, rest),
-            eelse == null ? rest([]) : transform(eelse, rest)),
+            transformNoDelay(eif, rest),
+            eelse == null ? rest([]) : transformNoDelay(eelse, rest)),
         };
       });
   }
@@ -372,7 +371,7 @@ class ContinuationDetail
       }
       case EUntyped(e):
       {
-        return transform(
+        return transformNoDelay(
           e,
           function(eResult)
           {
@@ -387,7 +386,7 @@ class ContinuationDetail
       }
       case EUnop(op, postFix, e):
       {
-        return transform(
+        return transformNoDelay(
           e,
           function(eResult)
           {
@@ -403,7 +402,7 @@ class ContinuationDetail
       #if !haxe3
       case EType(e, field):
       {
-        return transform(
+        return transformNoDelay(
           e,
           function(eResult)
           {
@@ -474,7 +473,7 @@ class ContinuationDetail
             {
               return
               {
-                expr: transform(
+                expr: transformNoDelay(
                   catchBody.expr,
                   function(catchResult)
                   {
@@ -539,7 +538,7 @@ class ContinuationDetail
       }
       case EThrow(e):
       {
-        return transform(
+        return transformNoDelay(
           e,
           function(eResult)
           {
@@ -558,7 +557,7 @@ class ContinuationDetail
       }
       case ESwitch(e, cases, edef):
       {
-        return transform(e, function(eResult)
+        return transformNoDelay(e, function(eResult)
         {
           var transformedCases = cases.map(function(c)
           {
@@ -615,7 +614,7 @@ class ContinuationDetail
                         {
                           if (i == originParams.length)
                           {
-                            return transform(e, function(functionResult)
+                            return transformNoDelay(e, function(functionResult)
                             {
                               transformedParameters.push(
                               {
@@ -633,7 +632,7 @@ class ContinuationDetail
                           }
                           else
                           {
-                            return transform(
+                            return transformNoDelay(
                               originParams[i],
                               function(parameterResult:Array<Expr>):Expr
                               {
@@ -657,7 +656,7 @@ class ContinuationDetail
           }
           default:
         }
-        return transform(
+        return transformNoDelay(
           returnExpr,
           function(eResult)
           {
@@ -675,7 +674,7 @@ class ContinuationDetail
       }
       case EParenthesis(e):
       {
-        return transform(e, rest);
+        return transformNoDelay(e, rest);
       }
       case EObjectDecl(originFields):
       {
@@ -694,7 +693,7 @@ class ContinuationDetail
           else
           {
             var originField = originFields[i];
-            return transform(
+            return transformNoDelay(
               originField.expr,
               function(valueResult:Array<Expr>):Expr
               {
@@ -730,7 +729,7 @@ class ContinuationDetail
           }
           else
           {
-            return transform(
+            return transformNoDelay(
               originParams[i],
               function(parameterResult:Array<Expr>):Expr
               {
@@ -783,19 +782,17 @@ class ContinuationDetail
                   Context.error("Expect identify before \"in\".", e1.pos);
                 }
               }
-            return transform(
+            var getIteratorExpr =
+            {
+              expr: ECall(
+                macro com.dongxiguo.continuation.Continuation.ContinuationDetail.toIterator,
+                [ e2 ]),
+              pos: Context.currentPos(),
+            }
+            return transformNoDelay(
               macro
               {
-                var __iterator = null;
-                {
-                  inline function setIterator<T>(
-                    ?iterator:Iterator<T> = null,
-                    ?iterable:Iterable<T> = null):Void
-                  {
-                    __iterator = iterable != null ? iterable.iterator() : iterator;
-                  }
-                  setIterator($e2);
-                }
+                var __iterator = $getIteratorExpr;
                 while (__iterator.hasNext())
                 {
                   var $elementName = __iterator.next();
@@ -813,7 +810,7 @@ class ContinuationDetail
       }
       case EField(e, field):
       {
-        return transform(
+        return transformNoDelay(
           e,
           function(eResult)
           {
@@ -844,7 +841,7 @@ class ContinuationDetail
       }
       case ECheckType(e, t):
       {
-        return transform(
+        return transformNoDelay(
           e,
           function(eResult)
           {
@@ -859,7 +856,7 @@ class ContinuationDetail
       }
       case ECast(e, t):
       {
-        return transform(
+        return transformNoDelay(
           e,
           function(eResult)
           {
@@ -903,15 +900,58 @@ class ContinuationDetail
                           }
                           var handlerArgResult = [];
                           var handlerArgDefs = [];
-                          switch (Context.follow(Context.typeof(typingExpr)))
+                          var functionType = try
                           {
-                            case TFun(args, _):
-                            {
-                              switch (args[args.length - 1].t)
+                            Context.follow(Context.typeof(typingExpr));
+                          }
+                          catch (_:Dynamic)
+                          {
+                            null;
+                          }
+                          if (functionType == null)
+                          {
+                            var name = "__parameter_" + seed++;
+                            handlerArgResult.push(
                               {
-                                case TFun(args, _):
+                                pos: origin.pos,
+                                expr: EConst(CIdent(name))
+                              });
+                            handlerArgDefs.push(
+                              {
+                                opt: true,
+                                name: name,
+                                type: null,
+                                value: null
+                              });
+                          }
+                          else
+                          {
+                            switch (functionType)
+                            {
+                              case TFun(args, _):
+                              {
+                                switch (args[args.length - 1].t)
                                 {
-                                  for (handlerArg in args)
+                                  case TFun(args, _):
+                                  {
+                                    for (handlerArg in args)
+                                    {
+                                      var name = "__parameter_" + seed++;
+                                      handlerArgResult.push(
+                                        {
+                                          pos: origin.pos,
+                                          expr: EConst(CIdent(name))
+                                        });
+                                      handlerArgDefs.push(
+                                        {
+                                          opt: handlerArg.opt,
+                                          name: name,
+                                          type: null,
+                                          value: null
+                                        });
+                                    }
+                                  }
+                                  default:
                                   {
                                     var name = "__parameter_" + seed++;
                                     handlerArgResult.push(
@@ -921,34 +961,18 @@ class ContinuationDetail
                                       });
                                     handlerArgDefs.push(
                                       {
-                                        opt: handlerArg.opt,
+                                        opt: true,
                                         name: name,
                                         type: null,
                                         value: null
                                       });
                                   }
                                 }
-                                default:
-                                {
-                                  var name = "__parameter_" + seed++;
-                                  handlerArgResult.push(
-                                    {
-                                      pos: origin.pos,
-                                      expr: EConst(CIdent(name))
-                                    });
-                                  handlerArgDefs.push(
-                                    {
-                                      opt: true,
-                                      name: name,
-                                      type: null,
-                                      value: null
-                                    });
-                                }
                               }
-                            }
-                            default:
-                            {
-                              Context.error("First parameter of async() must be a function.", e.pos);
+                              default:
+                              {
+                                Context.error("First parameter of async() must be a function.", e.pos);
+                              }
                             }
                           }
                           transformedParameters.push(
@@ -998,7 +1022,7 @@ class ContinuationDetail
         {
           if (i == originParams.length)
           {
-            return transform(e, function(functionResult)
+            return transformNoDelay(e, function(functionResult)
             {
               var handlerArgResult = [];
               var handlerArgDefs = [];
@@ -1013,7 +1037,7 @@ class ContinuationDetail
           }
           else
           {
-            return transform(
+            return transformNoDelay(
               originParams[i],
               function(parameterResult:Array<Expr>):Expr
               {
@@ -1072,11 +1096,11 @@ class ContinuationDetail
           }
           default:
           {
-            return transform(
+            return transformNoDelay(
               e1,
               function(e1Result)
               {
-                return transform(e2, function(e2Result)
+                return transformNoDelay(e2, function(e2Result)
                 {
                   return rest(
                     [
@@ -1109,7 +1133,7 @@ class ContinuationDetail
           }
           else
           {
-            return transform(
+            return transformNoDelay(
               originParams[i],
               function(parameterResult:Array<Expr>):Expr
               {
@@ -1125,11 +1149,11 @@ class ContinuationDetail
       }
       case EArray(e1, e2):
       {
-        return transform(
+        return transformNoDelay(
           e1,
           function(e1Result)
           {
-            return transform(e2, function(e2Result)
+            return transformNoDelay(e2, function(e2Result)
             {
               return rest(
                 [
@@ -1190,5 +1214,36 @@ class ContinuationDetail
     return delayFunctions[id]();
   }
 
+  @:noUsing @:macro public static function toIterator(iterator:Expr):Expr
+  {
+    function toType(c:ComplexType):Null<Type>
+    {
+      return c == null ? null : haxe.macro.Context.typeof( { expr: ECheckType(macro null, c), pos: Context.currentPos() } );
+    }
+    if (
+      Context.unify(Context.typeof(iterator), toType(TPath(
+      {
+        name: "Iterator",
+        pack: [],
+        sub: null,
+        params:
+        [
+          TPType(TPath(
+            {
+              name: "Dynamic",
+              pack: [],
+              sub: null,
+              params: [],
+            })),
+        ]
+      }))))
+    {
+      return iterator;
+    }
+    else
+    {
+      return macro $iterator.iterator();
+    }
+  }
 }
 
