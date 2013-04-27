@@ -427,11 +427,15 @@ class ContinuationDetail
         var isVoidTry = switch (Context.follow(Context.typeof(e)))
         {
           #if haxe_211
-          case TAbstract(t, []):
+          case TAbstract(t, params):
           #else
           case TInst(t, params):
-          if (params.length != 0) { false; } else
           #end
+          if (params.length != 0)
+          {
+            false;
+          }
+          else
           {
             var voidType = t.get();
             voidType.module == "StdTypes" && voidType.name == "Void";
