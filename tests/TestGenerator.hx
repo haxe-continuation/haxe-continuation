@@ -53,7 +53,6 @@ class TestGenerator
 
   public static function main() 
   {
-    trace(1.5 % 1);
     for (i in intGenerator)
     {
       trace(i);
