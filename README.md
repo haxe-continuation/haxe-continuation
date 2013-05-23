@@ -1,10 +1,11 @@
 haxe-continuation
 =================
 
-If a function's last parameter is a callback function, it is an
-*asynchronous function*. **haxe-continuation** enables you to write an
-asynchronous function like a synchronization function, and automatically
-transform the function in *continuation-passing style (CPS)*. That means
+An *asynchronous functions* is a function that accept its last parameter 
+as a callback function.
+And **haxe-continuation** is a macro library enables you to invoke and write
+asynchronous functions like a synchronization function, and automatically
+transform the function into *continuation-passing style (CPS)*. That means
 you can write code looks like *multithreading* without platform
 multithreading support.
 
@@ -31,41 +32,7 @@ haxe-continuation requires Haxe 2.10.
 
 ## Usage
 
-You can use `Continuation.cpsFunction` to write a CPS asynchronous
-function. In `Continuation.cpsFunction`, `async` is a magic word to invoke other
-async functions. When calling an asynchronous function with the `.async()` postfix, you need not to explicitly pass a callback
-function. Instead, the code after `.async()` will be captured as the callback
-function used by the callee.
-
-    import com.dongxiguo.continuation.Continuation;
-    class Sample
-    {
-      // An asynchronous function without automatically CPS transformation.
-      static function sleepOneSecond(handler:Void->Void):Void
-      {
-        haxe.Timer.delay(handler, 1000);
-      }
-      public static function main() 
-      {
-        Continuation.cpsFunction(function asyncTest():Void
-        {
-          trace("Start continuation.");
-          for (i in 0...10)
-          {
-            // Invoke an asynchronous function.
-            sleepOneSecond().async();
-            trace("Run sleepOneSecond " + i + " times.");
-          }
-          trace("Continuation is done.");
-        });
-        asyncTest(function()
-        {
-          trace("Handler without continuation.");
-        });
-      }
-    }
-
-Another way to write a CPS function is putting `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))`
+To write a CPS function, put `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))`
 before a class, and marking the CPS functions in that class as `@:cps`:
 
     import com.dongxiguo.continuation.Continuation;
@@ -97,6 +64,42 @@ before a class, and marking the CPS functions in that class as `@:cps`:
       }
     }
 
+In CPS functions, `async` is a magic word to invoke other
+async functions. When calling an asynchronous function with the `.async()` postfix, you need not to explicitly pass a callback
+function. Instead, the code after `.async()` will be captured as the callback
+function used by the callee.
+
+Another way is using `Continuation.cpsFunction` to write nested CPS functions:
+
+    import com.dongxiguo.continuation.Continuation;
+    class Sample
+    {
+      // An asynchronous function without automatically CPS transformation.
+      static function sleepOneSecond(handler:Void->Void):Void
+      {
+        haxe.Timer.delay(handler, 1000);
+      }
+      public static function main() 
+      {
+        Continuation.cpsFunction(function asyncTest():Void
+        {
+          trace("Start continuation.");
+          for (i in 0...10)
+          {
+            // Invoke an asynchronous function.
+            sleepOneSecond().async();
+            trace("Run sleepOneSecond " + i + " times.");
+          }
+          trace("Continuation is done.");
+        });
+        asyncTest(function()
+        {
+          trace("Handler without continuation.");
+        });
+      }
+    }
+
+
 See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx
 for more examples.
 
@@ -104,6 +107,59 @@ for more examples.
 
 Look at https://github.com/Atry/haxe-continuation/blob/master/tests/TestNode.hx.
 The example forks 5 threads, and calls Node.js's asynchronous functions in each thread.
+
+### Generator
+
+haxe-continuation also provider a utility to wrap CPS functions into `Iterator`s.
+
+For example:
+
+    using com.dongxiguo.continuation.utils.Generator;
+    @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
+    class TestGenerator
+    {
+      @:cps
+      static function intGenerator(yield:YieldFunction<Int>):Void
+      {
+        for (i in 1...4)
+        {
+          for (j in 1...(i+1))
+          {
+            trace('$j * $i =');
+            yield(i * j).async();
+            trace("-------");
+          }
+        }
+      }
+      public static function main() 
+      {
+        for (i in intGenerator)
+        {
+          trace(i);
+        }
+      }
+    }
+
+The output:
+
+    TestGenerator.hx:47: 1 * 1 =
+    TestGenerator.hx:59: 1
+    TestGenerator.hx:49: -------
+    TestGenerator.hx:47: 1 * 2 =
+    TestGenerator.hx:59: 2
+    TestGenerator.hx:49: -------
+    TestGenerator.hx:47: 2 * 2 =
+    TestGenerator.hx:59: 4
+    TestGenerator.hx:49: -------
+    TestGenerator.hx:47: 1 * 3 =
+    TestGenerator.hx:59: 3
+    TestGenerator.hx:49: -------
+    TestGenerator.hx:47: 2 * 3 =
+    TestGenerator.hx:59: 6
+    TestGenerator.hx:49: -------
+    TestGenerator.hx:47: 3 * 3 =
+    TestGenerator.hx:59: 9
+    TestGenerator.hx:49: -------
 
 ## License
 
