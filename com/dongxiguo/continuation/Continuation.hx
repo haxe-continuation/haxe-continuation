@@ -47,7 +47,9 @@ class Continuation
 
     In wrapped function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
    **/
-  @:macro public static function cpsFunction(expr:Expr):Expr
+ 
+  #if haxe3 macro #else @:macro #end
+  public static function cpsFunction(expr:Expr):Expr
   {
     switch (expr.expr)
     {
@@ -115,7 +117,9 @@ class Continuation
 
     In these methods, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
   **/
-  @:noUsing @:macro public static function cpsByMeta(metaName:String):Array<Field>
+  @:noUsing
+  #if haxe3 macro #else @:macro #end
+  public static function cpsByMeta(metaName:String):Array<Field>
   {
     var bf = Context.getBuildFields();
     for (field in bf)
@@ -239,7 +243,7 @@ class ContinuationDetail
   {
     switch (origin.expr)
     {
-      #if haxe_211
+      #if (haxe_211 || haxe3)
       case EMeta(_, _):
       {
         return rest([origin]);
@@ -437,7 +441,7 @@ class ContinuationDetail
         }
         var isVoidTry = switch (Context.follow(Context.typeof(e)))
         {
-          #if haxe_211
+          #if (haxe_211 || haxe3)
           case TAbstract(t, params):
           #else
           case TInst(t, params):
@@ -578,11 +582,11 @@ class ContinuationDetail
           {
             if (c.expr == null)
             {
-              return { expr: rest([]), #if haxe_211 guard: c.guard, #end values: c.values };
+              return { expr: rest([]), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
             }
             else
             {
-              return { expr: transform(c.expr, rest), #if haxe_211 guard: c.guard, #end values: c.values };
+              return { expr: transform(c.expr, rest), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
             }
           }).array();
           var transformedDef = edef == null ? null : transform(edef, rest);
@@ -797,6 +801,7 @@ class ContinuationDetail
                   Context.error("Expect identify before \"in\".", e1.pos);
                 }
               }
+            #if (haxe_211 || haxe3)
             var getIteratorExpr =
             {
               expr: ECall(
@@ -804,10 +809,24 @@ class ContinuationDetail
                 [ e2 ]),
               pos: Context.currentPos(),
             }
+            #end
             return transformNoDelay(
               macro
               {
+                #if (haxe_211 || haxe3)
                 var __iterator = $getIteratorExpr;
+                #else
+                var __iterator = null;
+                {
+                  inline function setIterator<T>(
+                    ?iterable:Iterable<T> = null,
+                    ?iterator:Iterator<T> = null):Void
+                  {
+                    __iterator = iterable != null ? iterable.iterator() : iterator;
+                  }
+                  setIterator($e2);
+                }
+                #end
                 while (__iterator.hasNext())
                 {
                   var $elementName = __iterator.next();
@@ -1248,12 +1267,16 @@ class ContinuationDetail
   
   #end
   
-  @:noUsing @:macro public static function runDelayedFunction(id:Int):Expr
+  @:noUsing
+  #if haxe3 macro #else @:macro #end
+  public static function runDelayedFunction(id:Int):Expr
   {
     return delayFunctions[id]();
   }
-
-  @:noUsing @:macro public static function toIterator(iterator:Expr):Expr
+  #if (haxe_211 || haxe3)
+  @:noUsing
+  #if haxe3 macro #else @:macro #end
+  public static function toIterator(iterator:Expr):Expr
   {
     function toType(c:ComplexType):Null<Type>
     {
@@ -1284,5 +1307,6 @@ class ContinuationDetail
       return macro $iterator.iterator();
     }
   }
+  #end
 }
 
