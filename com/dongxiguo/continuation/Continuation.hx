@@ -328,7 +328,18 @@ class ContinuationDetail
               expr: EVars(newVars),
             };
             var restExpr = rest([]);
-            return macro { $varExpr; $restExpr; }
+            return
+            {
+              pos: origin.pos,
+              expr: EBlock(
+                [
+                  {
+                    pos: origin.pos,
+                    expr: EVars(newVars),
+                  },
+                  rest([])
+                ]),
+            }
           }
           else
           {
@@ -574,7 +585,7 @@ class ContinuationDetail
               return { expr: transform(c.expr, rest), #if haxe_211 guard: c.guard, #end values: c.values };
             }
           }).array();
-          var transformedDef = edef == null ? rest([]) : transform(edef, rest);
+          var transformedDef = edef == null ? null : transform(edef, rest);
           return
           {
             pos: origin.pos,
@@ -894,11 +905,35 @@ class ContinuationDetail
                         return transformNoDelay(e, function(functionResult)
                         {
                           var transformedCalleeExpr = unpack(functionResult, e.pos);
-                          var typingExpr = switch (transformedCalleeExpr)
+                          var typingExpr = switch (transformedCalleeExpr.expr)
                           {
-                            case { expr: EField( { expr: EConst(CIdent("super")) }, fieldName) } :
+                            case EField(e, fieldName):
                             {
-                              macro this.$fieldName;
+                              switch (e.expr)
+                              {
+                                case EConst(c):
+                                {
+                                  switch (c)
+                                  {
+                                    case CIdent(s):
+                                    {
+                                      if (s == "super")
+                                      {
+                                        {
+                                          pos: transformedCalleeExpr.pos,
+                                          expr: EField(macro this, fieldName),
+                                        }
+                                      }
+                                      else
+                                      {
+                                        transformedCalleeExpr;
+                                      }
+                                    }
+                                    default: transformedCalleeExpr;
+                                  }
+                                }
+                                default: transformedCalleeExpr;
+                              }
                             }
                             default: transformedCalleeExpr;
                           }
