@@ -37,6 +37,7 @@ using com.dongxiguo.continuation.Continuation;
 @:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
 class TestContinuation 
 {
+
   
   @cps static function forkJoin():Int
   {

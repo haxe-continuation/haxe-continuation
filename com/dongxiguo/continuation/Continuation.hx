@@ -34,6 +34,12 @@ import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr;
 #end
+#if haxe3
+import haxe.ds.GenericStack;
+#else
+import haxe.FastList;
+typedef GenericCell<T> = FastCell<T>;
+#end
 using Lambda;
 
 /**
@@ -196,6 +202,27 @@ class Continuation
 class ContinuationDetail
 {
   #if macro
+  
+  static function pushMulti(gc:GenericCell<Expr>, a:Array<Expr>):GenericCell<Expr>
+  {
+    for (e in a)
+    {
+      gc = new GenericCell<Expr>(e, gc);
+    }
+    return gc;
+  }
+  
+  static function toReverseArray<E>(gc:GenericCell<E>):Array<E>
+  {
+    var result = [];
+    while (gc != null)
+    {
+      result.unshift(gc.elt);
+      gc = gc.next;
+    }
+    return result;
+  }
+  
   static var seed:Int = 0;
   
   static function unpack(exprs: Array<Expr>, pos: Position):Expr
@@ -629,13 +656,16 @@ class ContinuationDetail
                       case ECall(e, originParams):
                       {
                         // 优化 e 是另一个异步函数的情况
-                        function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
+                        function transformNext(i:Int, transformedParameters:Null<GenericCell<Expr>>):Expr
                         {
                           if (i == originParams.length)
                           {
                             return transformNoDelay(e, function(functionResult)
                             {
-                              transformedParameters.push(
+                              var a =
+                                toReverseArray(
+                                  transformedParameters);
+                              a.push(
                               {
                                 expr: EConst(CIdent("__return")),
                                 pos: origin.pos
@@ -645,7 +675,7 @@ class ContinuationDetail
                                 pos: origin.pos,
                                 expr: ECall(
                                   unpack(functionResult, origin.pos),
-                                  transformedParameters),
+                                  a),
                               };
                             });
                           }
@@ -655,15 +685,15 @@ class ContinuationDetail
                               originParams[i],
                               function(parameterResult:Array<Expr>):Expr
                               {
-                                for (e in parameterResult)
-                                {
-                                  transformedParameters.push(e);
-                                }
-                                return transformNext(i + 1, transformedParameters);
+                                return transformNext(
+                                  i + 1,
+                                  pushMulti(
+                                    transformedParameters,
+                                    parameterResult));
                               });
                           }
                         }
-                        return transformNext(0, []);
+                        return transformNext(0, null);
                       }
                       default:
                     }
@@ -697,7 +727,7 @@ class ContinuationDetail
       }
       case EObjectDecl(originFields):
       {
-        function transformNext(i:Int, transformedFields:Array<{ field : String, expr : Expr }>):Expr
+        function transformNext(i:Int, transformedFields:Null<GenericCell<{ field : String, expr : Expr }>>):Expr
         {
           if (i == originFields.length)
           {
@@ -705,7 +735,7 @@ class ContinuationDetail
             [
               {
                 pos: origin.pos,
-                expr: EObjectDecl(transformedFields),
+                expr: EObjectDecl(toReverseArray(transformedFields)),
               }
             ]);
           }
@@ -716,23 +746,25 @@ class ContinuationDetail
               originField.expr,
               function(valueResult:Array<Expr>):Expr
               {
+                var t = transformedFields;
                 for (e in valueResult)
                 {
-                  transformedFields.push(
+                  t = new GenericCell(
                     {
                       field: originField.field,
                       expr: unpack(valueResult, originField.expr.pos),
-                    });
+                    },
+                    t);
                 }
-                return transformNext(i + 1, transformedFields);
+                return transformNext(i + 1, t);
               });
           }
         }
-        return transformNext(0, []);
+        return transformNext(0, null);
       }
       case ENew(t, originParams):
       {
-        function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
+        function transformNext(i:Int, transformedParameters:Null<GenericCell<Expr>>):Expr
         {
           if (i == originParams.length)
           {
@@ -742,7 +774,7 @@ class ContinuationDetail
                 pos: origin.pos,
                 expr: ENew(
                   t,
-                  transformedParameters),
+                  toReverseArray(transformedParameters)),
               }
             ]);
           }
@@ -752,15 +784,15 @@ class ContinuationDetail
               originParams[i],
               function(parameterResult:Array<Expr>):Expr
               {
-                for (e in parameterResult)
-                {
-                  transformedParameters.push(e);
-                }
-                return transformNext(i + 1, transformedParameters);
+                return transformNext(
+                  i + 1,
+                  pushMulti(
+                    transformedParameters,
+                    parameterResult));
               });
           }
         }
-        return transformNext(0, []);
+        return transformNext(0, null);
       }
       case EIn(_, _):
       {
@@ -917,7 +949,7 @@ class ContinuationDetail
                 {
                   case ECall(e, originParams):
                   {
-                    function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
+                    function transformNext(i:Int, transformedParameters:Null<GenericCell<Expr>>):Expr
                     {
                       if (i == originParams.length)
                       {
@@ -1033,23 +1065,22 @@ class ContinuationDetail
                               }
                             }
                           }
-                          transformedParameters.push(
-                          {
-                            pos: origin.pos,
-                            expr: EFunction(null,
+                          var a = toReverseArray(transformedParameters);
+                          a.push(
                             {
-                              ret: null,
-                              params: [],
-                              expr: rest(handlerArgResult),
-                              args: handlerArgDefs
-                            })
-                          });
+                              pos: origin.pos,
+                              expr: EFunction(null,
+                              {
+                                ret: null,
+                                params: [],
+                                expr: rest(handlerArgResult),
+                                args: handlerArgDefs
+                              })
+                            });
                           return
                           {
                             pos: origin.pos,
-                            expr: ECall(
-                              transformedCalleeExpr,
-                              transformedParameters),
+                            expr: ECall(transformedCalleeExpr, a),
                           };
                         });
                       }
@@ -1059,15 +1090,15 @@ class ContinuationDetail
                           originParams[i],
                           function(parameterResult:Array<Expr>):Expr
                           {
-                            for (e in parameterResult)
-                            {
-                              transformedParameters.push(e);
-                            }
-                            return transformNext(i + 1, transformedParameters);
+                            return transformNext(
+                              i + 1,
+                              pushMulti(
+                                transformedParameters,
+                                parameterResult));
                           });
                       }
                     }
-                    return transformNext(0, []);
+                    return transformNext(0, null);
                   }
                   default:
                 }
@@ -1076,7 +1107,7 @@ class ContinuationDetail
             default:
           }
         }
-        function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
+        function transformNext(i:Int, transformedParameters:Null<GenericCell<Expr>>):Expr
         {
           if (i == originParams.length)
           {
@@ -1089,7 +1120,7 @@ class ContinuationDetail
                 pos: origin.pos,
                 expr: ECall(
                   unpack(functionResult, origin.pos),
-                  transformedParameters),
+                  toReverseArray(transformedParameters)),
               }]);
             });
           }
@@ -1099,15 +1130,15 @@ class ContinuationDetail
               originParams[i],
               function(parameterResult:Array<Expr>):Expr
               {
-                for (e in parameterResult)
-                {
-                  transformedParameters.push(e);
-                }
-                return transformNext(i + 1, transformedParameters);
+                return transformNext(
+                  i + 1,
+                  pushMulti(
+                    transformedParameters,
+                    parameterResult));
               });
           }
         }
-        return transformNext(0, []);
+        return transformNext(0, null);
       }
       case EBreak:
       {
@@ -1177,7 +1208,7 @@ class ContinuationDetail
       }
       case EArrayDecl(originParams):
       {
-        function transformNext(i:Int, transformedParameters:Array<Expr>):Expr
+        function transformNext(i:Int, transformedParameters:Null<GenericCell<Expr>>):Expr
         {
           if (i == originParams.length)
           {
@@ -1185,7 +1216,8 @@ class ContinuationDetail
             [
               {
                 pos: origin.pos,
-                expr: EArrayDecl(transformedParameters),
+                expr: EArrayDecl(
+                  toReverseArray(transformedParameters)),
               }
             ]);
           }
@@ -1195,15 +1227,15 @@ class ContinuationDetail
               originParams[i],
               function(parameterResult:Array<Expr>):Expr
               {
-                for (e in parameterResult)
-                {
-                  transformedParameters.push(e);
-                }
-                return transformNext(i + 1, transformedParameters);
+                return transformNext(
+                  i + 1,
+                  pushMulti(
+                    transformedParameters,
+                    parameterResult));
               });
           }
         }
-        return transformNext(0, []);
+        return transformNext(0, null);
       }
       case EArray(e1, e2):
       {
