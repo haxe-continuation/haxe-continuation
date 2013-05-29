@@ -12,7 +12,5 @@
     <tag v="neko"/>
     <tag v="php"/>
     <description>Enable continuation in Haxe</description>
-    <version name="0.2.2">
-      Fix return expression without return value.
-    </version>
+    <version name="1.0.0">Add some utilities: ForkJoin and Generator.</version>
 </project>

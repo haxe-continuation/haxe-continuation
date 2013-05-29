@@ -1,15 +1,19 @@
 all release.zip: \
+haxelib.json \
 haxelib.xml \
 haxedoc.xml \
 LICENSE \
-com/dongxiguo/continuation/Continuation.hx
+$(wildcard com/dongxiguo/continuation/*.hx com/dongxiguo/continuation/*/*.hx)
+
+haxelib.json: haxelib.xml
+	haxelib convertxml haxelib.xml
 
 release.zip:
 	 zip -u $@ $^
 
 
 clean:
-	$(RM) -r bin release.zip haxedoc.xml
+	$(RM) -r bin release.zip haxedoc.xml haxelib.json
 
 test: \
 bin/TestContinuation.n bin/TestContinuation.swf bin/TestContinuation.js \
@@ -97,8 +101,7 @@ tests/Sample.hx \
 
 
 haxedoc.xml: \
-com/dongxiguo/continuation/Continuation.hx \
-com/dongxiguo/continuation/utils/ForkJoin.hx
+$(wildcard com/dongxiguo/continuation/*.hx com/dongxiguo/continuation/*/*.hx)
 	haxe -xml $@ $^
 
 bin:
