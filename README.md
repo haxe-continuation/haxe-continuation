@@ -53,7 +53,7 @@ before a class, and marking the CPS functions in that class as `@:cps`:
         trace("Start continuation.");
         for (i in 0...10)
         {
-          // Invoke an asynchronous function.
+          // Magic .async() postfix to invoke an asynchronous function.
           sleepOneSecond().async();
           trace("Run sleepOneSecond " + i + " times.");
         }
