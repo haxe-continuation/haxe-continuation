@@ -16,7 +16,7 @@ command in shell:
 
     haxelib install continuation
 
-Now you can use continuation in your code:
+Now you can use continuation in your project:
 
 Output to JavaScript:
 
@@ -28,7 +28,7 @@ Output to JavaScript:
 
 , or output to any other platform that Haxe supports.
 
-haxe-continuation requires Haxe 2.10.
+haxe-continuation requires Haxe 2.10 or Haxe 3.
 
 ## Usage
 
