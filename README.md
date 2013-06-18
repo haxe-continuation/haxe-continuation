@@ -37,13 +37,17 @@ before a class, and marking the CPS functions in that class as `@:cps`:
 
     import com.dongxiguo.continuation.Continuation;
     @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
-    class Sample2
+    class Sample
     {
+    
       // An asynchronous function without automatically CPS transformation.
       static function sleepOneSecond(handler:Void->Void):Void
       {
         haxe.Timer.delay(handler, 1000);
       }
+    
+      // Will be transform to:
+      // static function asyncText(__return:Void->Void):Void
       @:cps static function asyncTest():Void
       {
         trace("Start continuation.");
@@ -55,6 +59,7 @@ before a class, and marking the CPS functions in that class as `@:cps`:
         }
         trace("Continuation is done.");
       }
+    
       public static function main() 
       {
         asyncTest(function()
@@ -62,6 +67,7 @@ before a class, and marking the CPS functions in that class as `@:cps`:
           trace("Handler without continuation.");
         });
       }
+    
     }
 
 In CPS functions, `async` is a magic word to invoke other
@@ -72,7 +78,7 @@ function used by the callee.
 Another way is using `Continuation.cpsFunction` to write nested CPS functions:
 
     import com.dongxiguo.continuation.Continuation;
-    class Sample
+    class Sample2
     {
       // An asynchronous function without automatically CPS transformation.
       static function sleepOneSecond(handler:Void->Void):Void
