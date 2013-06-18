@@ -75,7 +75,7 @@ async functions. When calling an asynchronous function with the `.async()` postf
 function. Instead, the code after `.async()` will be captured as the callback
 function for the callee.
 
-Another way is using `Continuation.cpsFunction` to write nested CPS functions:
+Another way is using `Continuation.cpsFunction` macro to write nested CPS functions:
 
     import com.dongxiguo.continuation.Continuation;
     class Sample2
@@ -87,12 +87,14 @@ Another way is using `Continuation.cpsFunction` to write nested CPS functions:
       }
       public static function main() 
       {
+        // This magic macro will transform function asyncTest to:
+        // function asyncText(__return:Void->Void):Void
         Continuation.cpsFunction(function asyncTest():Void
         {
           trace("Start continuation.");
           for (i in 0...10)
           {
-            // Invoke an asynchronous function.
+            // Magic .async() postfix to invoke an asynchronous function.
             sleepOneSecond().async();
             trace("Run sleepOneSecond " + i + " times.");
           }
