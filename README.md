@@ -73,7 +73,7 @@ before a class, and marking the CPS functions in that class as `@:cps`:
 In CPS functions, `async` is a magic word to invoke other
 async functions. When calling an asynchronous function with the `.async()` postfix, you need not to explicitly pass a callback
 function. Instead, the code after `.async()` will be captured as the callback
-function used by the callee.
+function for the callee.
 
 Another way is using `Continuation.cpsFunction` to write nested CPS functions:
 
