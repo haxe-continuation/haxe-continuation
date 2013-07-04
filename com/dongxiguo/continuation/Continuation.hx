@@ -1061,7 +1061,7 @@ class ContinuationDetail
                               }
                               default:
                               {
-                                Context.error("First parameter of async() must be a function.", e.pos);
+                                return Context.error("Expect function.", e.pos);
                               }
                             }
                           }
