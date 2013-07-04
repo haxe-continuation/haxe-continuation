@@ -4,7 +4,7 @@
   <output>
     <movie outputType="Application" />
     <movie input="" />
-    <movie path="bin\TestNode.swf" />
+    <movie path="bin\TestGenerator.swf" />
     <movie fps="0" />
     <movie width="0" />
     <movie height="0" />
