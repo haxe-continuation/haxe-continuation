@@ -1067,178 +1067,78 @@ class ContinuationDetail
                     {
                       if (i == originParams.length)
                       {
-                        var handlerName = "__handler" + Std.string(seed++);
-                        var declarationExpr =
-                          switch (parameterRequirement)
-                          {
-                            case IGNORE:
-                            {
-                              var functionExpr =
-                              {
-                                pos: origin.pos,
-                                expr: EFunction(null,
-                                {
-                                  ret: null,
-                                  params: [],
-                                  expr: rest([]),
-                                  args:
-                                  [
-                                    {
-                                      name: "__dummyVarArgs",
-                                      opt: false,
-                                      type: null,
-                                    },
-                                  ],
-                                })
-                              }
-                              macro var $handlerName = Reflect.makeVarArgs(cast $functionExpr);
-                            }
-                            case EXACT(numParameters):
-                            {
-                              var parameterNames:Array<String> = [];
-                              for (i in 0...numParameters)
-                              {
-                                parameterNames.push("__parameter_" + seed++);
-                              }
-                              {
-                                pos: origin.pos,
-                                expr: EFunction(handlerName,
-                                {
-                                  ret: null,
-                                  params: [],
-                                  expr: rest(
-                                    {
-                                      var parameterExprs:Array<Expr> = [];
-                                      for (parameterName in parameterNames)
-                                      {
-                                        parameterExprs.push(
-                                        {
-                                          pos: Context.currentPos(),
-                                          expr: EConst(CIdent(parameterName)),
-                                        });
-                                      }
-                                      parameterExprs;
-                                    }),
-                                  args:
-                                  {
-                                    var functionArg = [];
-                                    for (parameterName in parameterNames)
-                                    {
-                                      functionArg.push(
-                                        {
-                                          name: parameterName,
-                                          opt: false,
-                                          type: null,
-                                          value: null,
-                                        });
-                                    }
-                                    functionArg;
-                                  },
-                                })
-                              }
-                            }
-                            case ANY:
-                            {
-                              pos: Context.currentPos(),
-                              expr: EBlock([]),
-                            }
-                          }
-                        var startAsyncExpr = transformNoDelay(e, EXACT(1), function(functionResult)
+                        return transformNoDelay(e, ANY, function(functionResult)
                         {
                           var transformedCalleeExpr = unpack(functionResult, e.pos);
-                          var a = toReverseArray(transformedParameters);
-                          if (parameterRequirement == ANY)
+                          var typingExpr = switch (transformedCalleeExpr.expr)
                           {
-                            var typingExpr = switch (transformedCalleeExpr.expr)
+                            case EField(e, fieldName):
                             {
-                              case EField(e, fieldName):
+                              switch (e.expr)
                               {
-                                switch (e.expr)
+                                case EConst(c):
                                 {
-                                  case EConst(c):
+                                  switch (c)
                                   {
-                                    switch (c)
+                                    case CIdent(s):
                                     {
-                                      case CIdent(s):
+                                      if (s == "super")
                                       {
-                                        if (s == "super")
                                         {
-                                          {
-                                            pos: transformedCalleeExpr.pos,
-                                            expr: EField(macro this, fieldName),
-                                          }
-                                        }
-                                        else
-                                        {
-                                          transformedCalleeExpr;
+                                          pos: transformedCalleeExpr.pos,
+                                          expr: EField(macro this, fieldName),
                                         }
                                       }
-                                      default: transformedCalleeExpr;
+                                      else
+                                      {
+                                        transformedCalleeExpr;
+                                      }
                                     }
+                                    default: transformedCalleeExpr;
                                   }
-                                  default: transformedCalleeExpr;
                                 }
+                                default: transformedCalleeExpr;
                               }
-                              default: transformedCalleeExpr;
                             }
-                            var handlerArgResult = [];
-                            var handlerArgDefs = [];
-                            var functionType = try
-                            {
-                              Context.follow(Context.typeof(typingExpr));
-                            }
-                            catch (_:Dynamic)
-                            {
-                              null;
-                            }
-                            if (functionType == null)
-                            {
-                              var name = "__parameter_" + seed++;
-                              handlerArgResult.push(
-                                {
-                                  pos: origin.pos,
-                                  expr: EConst(CIdent(name))
-                                });
-                              handlerArgDefs.push(
-                                {
-                                  opt: true,
-                                  name: name,
-                                  type: null,
-                                  value: null
-                                });
-                            }
-                            else
-                            {
-                              switch (functionType)
+                            default: transformedCalleeExpr;
+                          }
+                          var handlerArgResult = [];
+                          var handlerArgDefs = [];
+                          var functionType = try
+                          {
+                            Context.follow(Context.typeof(typingExpr));
+                          }
+                          catch (_:Dynamic)
+                          {
+                            null;
+                          }
+                          if (functionType == null)
+                          {
+                            var name = "__parameter_" + seed++;
+                            handlerArgResult.push(
                               {
-                                case TFun(args, _):
+                                pos: origin.pos,
+                                expr: EConst(CIdent(name))
+                              });
+                            handlerArgDefs.push(
+                              {
+                                opt: true,
+                                name: name,
+                                type: null,
+                                value: null
+                              });
+                          }
+                          else
+                          {
+                            switch (functionType)
+                            {
+                              case TFun(args, _):
+                              {
+                                switch (args[args.length - 1].t)
                                 {
-                                  switch (args[args.length - 1].t)
+                                  case TFun(args, _):
                                   {
-                                    case TFun(args, _):
-                                    {
-                                      for (handlerArg in args)
-                                      {
-                                        var name = "__parameter_" + seed++;
-                                        handlerArgResult.push(
-                                          {
-                                            pos: origin.pos,
-                                            expr: EConst(CIdent(name))
-                                          });
-                                        handlerArgDefs.push(
-                                          {
-                                            opt: handlerArg.opt,
-                                            name: name,
-                                            #if (haxe3 || haxe_211)
-                                            type: haxe.macro.TypeTools.toComplexType(handlerArg.t),
-                                            #else
-                                            type: null,
-                                            #end
-                                            value: null
-                                          });
-                                      }
-                                    }
-                                    default:
+                                    for (handlerArg in args)
                                     {
                                       var name = "__parameter_" + seed++;
                                       handlerArgResult.push(
@@ -1248,51 +1148,59 @@ class ContinuationDetail
                                         });
                                       handlerArgDefs.push(
                                         {
-                                          opt: true,
+                                          opt: handlerArg.opt,
                                           name: name,
+                                          #if (haxe3 || haxe_211)
+                                          type: haxe.macro.TypeTools.toComplexType(handlerArg.t),
+                                          #else
                                           type: null,
+                                          #end
                                           value: null
                                         });
                                     }
                                   }
-                                }
-                                default:
-                                {
-                                  return Context.error("Expect function.", e.pos);
+                                  default:
+                                  {
+                                    var name = "__parameter_" + seed++;
+                                    handlerArgResult.push(
+                                      {
+                                        pos: origin.pos,
+                                        expr: EConst(CIdent(name))
+                                      });
+                                    handlerArgDefs.push(
+                                      {
+                                        opt: true,
+                                        name: name,
+                                        type: null,
+                                        value: null
+                                      });
+                                  }
                                 }
                               }
+                              default:
+                              {
+                                return Context.error("Expect function.", e.pos);
+                              }
                             }
-                            a.push(
-                              {
-                                pos: origin.pos,
-                                expr: EFunction(handlerName,
-                                {
-                                  ret: null,
-                                  params: [],
-                                  expr: rest(handlerArgResult),
-                                  args: handlerArgDefs
-                                }),
-                              });
                           }
-                          else
-                          {
-                            a.push(
+                          var a = toReverseArray(transformedParameters);
+                          a.push(
+                            {
+                              pos: origin.pos,
+                              expr: EFunction(null,
                               {
-                                pos: origin.pos,
-                                expr: EConst(CIdent(handlerName))
-                              });
-                          }
+                                ret: null,
+                                params: [],
+                                expr: rest(handlerArgResult),
+                                args: handlerArgDefs
+                              })
+                            });
                           return
                           {
                             pos: origin.pos,
                             expr: ECall(transformedCalleeExpr, a),
                           };
                         });
-                        return macro
-                        {
-                          $declarationExpr;
-                          $startAsyncExpr;
-                        }
                       }
                       else
                       {
