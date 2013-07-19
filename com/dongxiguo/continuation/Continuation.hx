@@ -1,11 +1,11 @@
 // Copyright (c) 2012, 杨博 (Yang Bo)
 // All rights reserved.
-// 
+//
 // Author: 杨博 (Yang Bo) <pop.atry@gmail.com>
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 // * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the following disclaimer.
 // * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
 // * Neither the name of the <ORGANIZATION> nor the names of its contributors
 //   may be used to endorse or promote products derived from this software
 //   without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -46,14 +46,14 @@ using Lambda;
   @author 杨博 <pop.atry@gmail.com>
 **/
 @:final
-class Continuation 
+class Continuation
 {
   /**
     Wrap a function to CPS function.
 
     In wrapped function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
    **/
- 
+
   #if haxe3 macro #else @:macro #end
   public static function cpsFunction(expr:Expr):Expr
   {
@@ -95,7 +95,8 @@ class Continuation
                 ]),
               expr: ContinuationDetail.transform(
                 originExpr,
-                function(transformed)
+                ANY,
+                function(transformed:Array<Expr>)
                 {
                   transformed.push(
                   {
@@ -166,6 +167,7 @@ class Continuation
               var originExpr = f.expr;
               f.expr = ContinuationDetail.transform(
                 originExpr,
+                ANY,
                 function(transformed)
                 {
                   transformed.push(
@@ -202,7 +204,7 @@ class Continuation
 class ContinuationDetail
 {
   #if macro
-  
+
   static function pushMulti(gc:GenericCell<Expr>, a:Array<Expr>):GenericCell<Expr>
   {
     for (e in a)
@@ -211,7 +213,7 @@ class ContinuationDetail
     }
     return gc;
   }
-  
+
   static function toReverseArray<E>(gc:GenericCell<E>):Array<E>
   {
     var result = [];
@@ -222,9 +224,9 @@ class ContinuationDetail
     }
     return result;
   }
-  
+
   static var seed:Int = 0;
-  
+
   static function unpack(exprs: Array<Expr>, pos: Position):Expr
   {
     if (exprs.length != 1)
@@ -239,34 +241,46 @@ class ContinuationDetail
     pos:Position,
     econd:Expr,
     eif:Expr,
-    eelse:Null<Expr>, rest:Array<Expr>->Expr):Expr
+    eelse:Null<Expr>,
+    parameterRequirement:ParameterRequirement,
+    rest:Array<Expr>->Expr):Expr
   {
+    var wrapper = new Wrapper(parameterRequirement, rest);
     return transformNoDelay(
       econd,
+      EXACT(1),
       function(econdResult)
       {
-        return
+        var declearation = wrapper.declearation;
+        var entry =
         {
           pos: pos,
           expr: EIf(
             unpack(econdResult, econd.pos),
-            transformNoDelay(eif, rest),
-            eelse == null ? rest([]) : transformNoDelay(eelse, rest)),
+            transformNoDelay(eif, ANY, wrapper.invocation),
+            eelse == null ? wrapper.invocation([]) : transformNoDelay(eelse, ANY, wrapper.invocation)),
         };
+        return macro { $declearation; $entry; }
       });
   }
 
-  public static function transform(origin:Expr, rest:Array<Expr>->Expr):Expr
+  public static function transform(
+    origin:Expr,
+    parameterRequirement:ParameterRequirement,
+    rest:Array<Expr>->Expr):Expr
   {
     return delay(
       origin.pos,
       function()
       {
-        return transformNoDelay(origin, rest);
+        return transformNoDelay(origin, parameterRequirement, rest);
       });
   }
-    
-  static function transformNoDelay(origin:Expr, rest:Array<Expr>->Expr):Expr
+
+  static function transformNoDelay(
+    origin:Expr,
+    parameterRequirement:ParameterRequirement,
+    rest:Array<Expr>->Expr):Expr
   {
     switch (origin.expr)
     {
@@ -292,6 +306,7 @@ class ContinuationDetail
           expr: EConst(CIdent(breakName))
         };
         var doBody = transform(e,
+          IGNORE,
           function(eResult)
           {
             return
@@ -302,6 +317,7 @@ class ContinuationDetail
           });
         var continueBody = transform(
           econd,
+          EXACT(1),
           function(econdResult)
           {
             return
@@ -343,33 +359,20 @@ class ContinuationDetail
       }
       case EVars(originVars):
       {
+        var functionName = "__afterVar_" + seed++;
         function transformNext(i:Int, values:Array<Null<Expr>>):Expr
         {
           if (i == originVars.length)
           {
-            var newVars = [];
-            for (i in 0...originVars.length)
-            {
-              var valueExpr = i < values.length ? values[i] : null;
-              var originVar = originVars[i];
-              newVars.push({ type: originVar.type, name: originVar.name, expr: valueExpr, });
-            }
-            var varExpr = {
-              pos: origin.pos,
-              expr: EVars(newVars),
-            };
-            var restExpr = rest([]);
             return
             {
               pos: origin.pos,
-              expr: EBlock(
-                [
-                  {
-                    pos: origin.pos,
-                    expr: EVars(newVars),
-                  },
-                  rest([])
-                ]),
+              expr: ECall(
+                {
+                  pos: origin.pos,
+                  expr: EConst(CIdent(functionName)),
+                },
+                values),
             }
           }
           else
@@ -381,7 +384,7 @@ class ContinuationDetail
             }
             else
             {
-              return transform(originVar.expr, function(varResult)
+              return transform(originVar.expr, ANY, function(varResult)
               {
                 var v = values.concat([]);
                 if (i + 1 < varResult.length)
@@ -395,7 +398,17 @@ class ContinuationDetail
                   var slot = j + i + 1 - varResult.length;
                   if (v[slot] == null)
                   {
-                    v[slot] = varResult[j];
+                    var originVarJ = originVars[j];
+                    v[slot] =
+                      if (originVarJ.type == null)
+                      {
+                        varResult[j];
+                      }
+                      else
+                      {
+                        pos: origin.pos,
+                        expr: ECheckType(varResult[j], originVarJ.type),
+                      }
                   }
                   else
                   {
@@ -409,12 +422,94 @@ class ContinuationDetail
             }
           }
         }
-        return transformNext(0, []);
+        var assign =
+        {
+          pos: origin.pos,
+          expr: EBinop(
+            OpAssign,
+            {
+              pos: origin.pos,
+              expr: EConst(CIdent(functionName)),
+            },
+            {
+              pos: origin.pos,
+              expr: EFunction(
+                null,
+                {
+                  params: [],
+                  args:
+                  {
+                    var functionArgs = [];
+                    for (originVar in originVars)
+                    functionArgs.push({
+                      name: originVar.name,
+                      opt: false,
+                      type: originVar.type,
+                      value: null,
+                    });
+                    functionArgs;
+                  },
+                  ret: null,
+                  expr:
+                  {
+                    pos: origin.pos,
+                    expr: EReturn(rest([])),
+                  }
+                }),
+            }),
+        }
+        var entry = transformNext(0, []);
+        var declearation =
+        {
+          pos: origin.pos,
+          expr: EBinop(
+            OpAssign,
+            {
+              pos: origin.pos,
+              expr: EConst(CIdent(functionName)),
+            },
+            {
+              pos: origin.pos,
+              expr: EFunction(
+                null,
+                {
+                  params: [],
+                  args:
+                  {
+                    var functionArgs = [];
+                    for (originVar in originVars)
+                    {
+                      functionArgs.push({
+                        name: originVar.name,
+                        opt: false,
+                        type: originVar.type,
+                        value: null,
+                      });
+                    }
+                    functionArgs;
+                  },
+                  ret: null,
+                  expr: macro return throw "This code must be elimited!",
+                }),
+            }),
+        }
+        return macro
+        {
+          var $functionName;
+          if (false) $declearation; // Type hint
+          inline function __entry()
+          {
+            $entry;
+          }
+          $assign;
+          __entry();
+        }
       }
       case EUntyped(e):
       {
         return transformNoDelay(
           e,
+          EXACT(1),
           function(eResult)
           {
             return rest(
@@ -430,6 +525,7 @@ class ContinuationDetail
       {
         return transformNoDelay(
           e,
+          EXACT(1),
           function(eResult)
           {
             return rest(
@@ -446,6 +542,7 @@ class ContinuationDetail
       {
         return transformNoDelay(
           e,
+          EXACT(1),
           function(eResult)
           {
             return rest(
@@ -461,7 +558,7 @@ class ContinuationDetail
       case ETry(e, catches):
       {
         var endTryName = "__endTry_" + seed++;
-        var endTryIdent = 
+        var endTryIdent =
         {
           pos: origin.pos,
           expr: EConst(CIdent(endTryName))
@@ -499,7 +596,7 @@ class ContinuationDetail
               ret: null,
               params: [],
               expr: rest(isVoidTry ? [] : [ tryResultIdent ]),
-              args: isVoidTry ? [] : 
+              args: isVoidTry ? [] :
               [
                 {
                   name: tryResultName,
@@ -511,7 +608,7 @@ class ContinuationDetail
             })
         }
         var tryBody = isVoidTry ? (macro { $e; __noException = true; }) : (macro { $tryResultIdent = $e; __noException = true; });
-        var transformedTry = 
+        var transformedTry =
         {
           pos: origin.pos,
           expr: ETry(tryBody, catches.map(
@@ -521,6 +618,7 @@ class ContinuationDetail
               {
                 expr: transformNoDelay(
                   catchBody.expr,
+                  parameterRequirement,
                   function(catchResult)
                   {
                     switch (catchResult.length)
@@ -586,6 +684,7 @@ class ContinuationDetail
       {
         return transformNoDelay(
           e,
+          EXACT(1),
           function(eResult)
           {
             return rest(
@@ -599,28 +698,35 @@ class ContinuationDetail
       }
       case ETernary(econd, eif, eelse):
       {
-        return transformCondition(origin.pos, econd, eif, eelse, rest);
+        return transformCondition(origin.pos, econd, eif, eelse, parameterRequirement, rest);
       }
       case ESwitch(e, cases, edef):
       {
-        return transformNoDelay(e, function(eResult)
+        var wrapper = new Wrapper(parameterRequirement, rest);
+        return transformNoDelay(e, EXACT(1), function(eResult)
         {
           var transformedCases = cases.map(function(c)
           {
             if (c.expr == null)
             {
-              return { expr: rest([]), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
+              return { expr: wrapper.invocation([]), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
             }
             else
             {
-              return { expr: transform(c.expr, rest), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
+              return { expr: transform(c.expr, ANY, wrapper.invocation), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
             }
           }).array();
-          var transformedDef = edef == null ? null : transform(edef, rest);
-          return
+          var transformedDef = edef == null ? null : transform(edef, ANY, wrapper.invocation);
+          var entry =
           {
             pos: origin.pos,
             expr: ESwitch(unpack(eResult, e.pos), transformedCases, transformedDef),
+          }
+          var declearation = wrapper.declearation;
+          return macro
+          {
+            $declearation;
+            $entry;
           }
         });
       }
@@ -660,7 +766,7 @@ class ContinuationDetail
                         {
                           if (i == originParams.length)
                           {
-                            return transformNoDelay(e, function(functionResult)
+                            return transformNoDelay(e, ANY, function(functionResult)
                             {
                               var a =
                                 toReverseArray(
@@ -670,7 +776,7 @@ class ContinuationDetail
                                 expr: EConst(CIdent("__return")),
                                 pos: origin.pos
                               });
-                              return 
+                              return
                               {
                                 pos: origin.pos,
                                 expr: ECall(
@@ -683,6 +789,7 @@ class ContinuationDetail
                           {
                             return transformNoDelay(
                               originParams[i],
+                              ANY,
                               function(parameterResult:Array<Expr>):Expr
                               {
                                 return transformNext(
@@ -707,6 +814,7 @@ class ContinuationDetail
         }
         return transformNoDelay(
           returnExpr,
+          ANY,
           function(eResult)
           {
             return
@@ -723,7 +831,7 @@ class ContinuationDetail
       }
       case EParenthesis(e):
       {
-        return transformNoDelay(e, rest);
+        return transformNoDelay(e, parameterRequirement, rest);
       }
       case EObjectDecl(originFields):
       {
@@ -744,6 +852,7 @@ class ContinuationDetail
             var originField = originFields[i];
             return transformNoDelay(
               originField.expr,
+              EXACT(1),
               function(valueResult:Array<Expr>):Expr
               {
                 var t = transformedFields;
@@ -782,6 +891,7 @@ class ContinuationDetail
           {
             return transformNoDelay(
               originParams[i],
+              ANY,
               function(parameterResult:Array<Expr>):Expr
               {
                 return transformNext(
@@ -801,7 +911,7 @@ class ContinuationDetail
       }
       case EIf(econd, eif, eelse):
       {
-        return transformCondition(origin.pos, econd, eif, eelse, rest);
+        return transformCondition(origin.pos, econd, eif, eelse, parameterRequirement, rest);
       }
       case EFunction(_, _):
       {
@@ -841,31 +951,32 @@ class ContinuationDetail
                 [ e2 ]),
               pos: Context.currentPos(),
             }
+            #else
+            var getIteratorExpr = macro
+            {
+              var __tempIterator = null;
+              inline function setIterator<T>(
+                ?iterable:Iterable<T> = null,
+                ?iterator:Iterator<T> = null):Void
+              {
+                __tempIterator = iterable != null ? iterable.iterator() : iterator;
+              }
+              setIterator($e2);
+              __tempIterator;
+            }
             #end
-            return transformNoDelay(
+            var body = transformNoDelay(
               macro
               {
-                #if (haxe_211 || haxe3)
-                var __iterator = $getIteratorExpr;
-                #else
-                var __iterator = null;
-                {
-                  inline function setIterator<T>(
-                    ?iterable:Iterable<T> = null,
-                    ?iterator:Iterator<T> = null):Void
-                  {
-                    __iterator = iterable != null ? iterable.iterator() : iterator;
-                  }
-                  setIterator($e2);
-                }
-                #end
                 while (__iterator.hasNext())
                 {
                   var $elementName = __iterator.next();
                   $expr;
                 }
               },
+              IGNORE,
               rest);
+            return macro { var __iterator = $getIteratorExpr; $body; };
           }
           default:
           {
@@ -878,6 +989,7 @@ class ContinuationDetail
       {
         return transformNoDelay(
           e,
+          EXACT(1),
           function(eResult)
           {
             return rest(
@@ -909,6 +1021,7 @@ class ContinuationDetail
       {
         return transformNoDelay(
           e,
+          EXACT(1),
           function(eResult)
           {
             return rest(
@@ -924,6 +1037,7 @@ class ContinuationDetail
       {
         return transformNoDelay(
           e,
+          EXACT(1),
           function(eResult)
           {
             return rest(
@@ -953,78 +1067,178 @@ class ContinuationDetail
                     {
                       if (i == originParams.length)
                       {
-                        return transformNoDelay(e, function(functionResult)
-                        {
-                          var transformedCalleeExpr = unpack(functionResult, e.pos);
-                          var typingExpr = switch (transformedCalleeExpr.expr)
+                        var handlerName = "__handler" + Std.string(seed++);
+                        var declarationExpr =
+                          switch (parameterRequirement)
                           {
-                            case EField(e, fieldName):
+                            case IGNORE:
                             {
-                              switch (e.expr)
-                              {
-                                case EConst(c):
-                                {
-                                  switch (c)
-                                  {
-                                    case CIdent(s):
-                                    {
-                                      if (s == "super")
-                                      {
-                                        {
-                                          pos: transformedCalleeExpr.pos,
-                                          expr: EField(macro this, fieldName),
-                                        }
-                                      }
-                                      else
-                                      {
-                                        transformedCalleeExpr;
-                                      }
-                                    }
-                                    default: transformedCalleeExpr;
-                                  }
-                                }
-                                default: transformedCalleeExpr;
-                              }
-                            }
-                            default: transformedCalleeExpr;
-                          }
-                          var handlerArgResult = [];
-                          var handlerArgDefs = [];
-                          var functionType = try
-                          {
-                            Context.follow(Context.typeof(typingExpr));
-                          }
-                          catch (_:Dynamic)
-                          {
-                            null;
-                          }
-                          if (functionType == null)
-                          {
-                            var name = "__parameter_" + seed++;
-                            handlerArgResult.push(
+                              var functionExpr =
                               {
                                 pos: origin.pos,
-                                expr: EConst(CIdent(name))
-                              });
-                            handlerArgDefs.push(
-                              {
-                                opt: true,
-                                name: name,
-                                type: null,
-                                value: null
-                              });
-                          }
-                          else
-                          {
-                            switch (functionType)
-                            {
-                              case TFun(args, _):
-                              {
-                                switch (args[args.length - 1].t)
+                                expr: EFunction(null,
                                 {
-                                  case TFun(args, _):
+                                  ret: null,
+                                  params: [],
+                                  expr: rest([]),
+                                  args:
+                                  [
+                                    {
+                                      name: "__dummyVarArgs",
+                                      opt: false,
+                                      type: null,
+                                    },
+                                  ],
+                                })
+                              }
+                              macro var $handlerName = Reflect.makeVarArgs(cast $functionExpr);
+                            }
+                            case EXACT(numParameters):
+                            {
+                              var parameterNames:Array<String> = [];
+                              for (i in 0...numParameters)
+                              {
+                                parameterNames.push("__parameter_" + seed++);
+                              }
+                              {
+                                pos: origin.pos,
+                                expr: EFunction(handlerName,
+                                {
+                                  ret: null,
+                                  params: [],
+                                  expr: rest(
+                                    {
+                                      var parameterExprs:Array<Expr> = [];
+                                      for (parameterName in parameterNames)
+                                      {
+                                        parameterExprs.push(
+                                        {
+                                          pos: Context.currentPos(),
+                                          expr: EConst(CIdent(parameterName)),
+                                        });
+                                      }
+                                      parameterExprs;
+                                    }),
+                                  args:
                                   {
-                                    for (handlerArg in args)
+                                    var functionArg = [];
+                                    for (parameterName in parameterNames)
+                                    {
+                                      functionArg.push(
+                                        {
+                                          name: parameterName,
+                                          opt: false,
+                                          type: null,
+                                          value: null,
+                                        });
+                                    }
+                                    functionArg;
+                                  },
+                                })
+                              }
+                            }
+                            case ANY:
+                            {
+                              pos: Context.currentPos(),
+                              expr: EBlock([]),
+                            }
+                          }
+                        var startAsyncExpr = transformNoDelay(e, EXACT(1), function(functionResult)
+                        {
+                          var transformedCalleeExpr = unpack(functionResult, e.pos);
+                          var a = toReverseArray(transformedParameters);
+                          if (parameterRequirement == ANY)
+                          {
+                            var typingExpr = switch (transformedCalleeExpr.expr)
+                            {
+                              case EField(e, fieldName):
+                              {
+                                switch (e.expr)
+                                {
+                                  case EConst(c):
+                                  {
+                                    switch (c)
+                                    {
+                                      case CIdent(s):
+                                      {
+                                        if (s == "super")
+                                        {
+                                          {
+                                            pos: transformedCalleeExpr.pos,
+                                            expr: EField(macro this, fieldName),
+                                          }
+                                        }
+                                        else
+                                        {
+                                          transformedCalleeExpr;
+                                        }
+                                      }
+                                      default: transformedCalleeExpr;
+                                    }
+                                  }
+                                  default: transformedCalleeExpr;
+                                }
+                              }
+                              default: transformedCalleeExpr;
+                            }
+                            var handlerArgResult = [];
+                            var handlerArgDefs = [];
+                            var functionType = try
+                            {
+                              Context.follow(Context.typeof(typingExpr));
+                            }
+                            catch (_:Dynamic)
+                            {
+                              null;
+                            }
+                            if (functionType == null)
+                            {
+                              var name = "__parameter_" + seed++;
+                              handlerArgResult.push(
+                                {
+                                  pos: origin.pos,
+                                  expr: EConst(CIdent(name))
+                                });
+                              handlerArgDefs.push(
+                                {
+                                  opt: true,
+                                  name: name,
+                                  type: null,
+                                  value: null
+                                });
+                            }
+                            else
+                            {
+                              switch (functionType)
+                              {
+                                case TFun(args, _):
+                                {
+                                  switch (args[args.length - 1].t)
+                                  {
+                                    case TFun(args, _):
+                                    {
+                                      for (handlerArg in args)
+                                      {
+                                        var name = "__parameter_" + seed++;
+                                        handlerArgResult.push(
+                                          {
+                                            pos: origin.pos,
+                                            expr: EConst(CIdent(name))
+                                          });
+                                        handlerArgDefs.push(
+                                          {
+                                            opt: handlerArg.opt,
+                                            name: name,
+                                            #if (haxe3 || haxe_211)
+                                            type: haxe.macro.TypeTools.toComplexType(handlerArg.t),
+                                            #else
+                                            type: null,
+                                            #end
+                                            value: null
+                                          });
+                                      }
+                                    }
+                                    default:
                                     {
                                       var name = "__parameter_" + seed++;
                                       handlerArgResult.push(
@@ -1034,60 +1248,57 @@ class ContinuationDetail
                                         });
                                       handlerArgDefs.push(
                                         {
-                                          opt: handlerArg.opt,
+                                          opt: true,
                                           name: name,
                                           type: null,
                                           value: null
                                         });
                                     }
                                   }
-                                  default:
-                                  {
-                                    var name = "__parameter_" + seed++;
-                                    handlerArgResult.push(
-                                      {
-                                        pos: origin.pos,
-                                        expr: EConst(CIdent(name))
-                                      });
-                                    handlerArgDefs.push(
-                                      {
-                                        opt: true,
-                                        name: name,
-                                        type: null,
-                                        value: null
-                                      });
-                                  }
+                                }
+                                default:
+                                {
+                                  return Context.error("Expect function.", e.pos);
                                 }
                               }
-                              default:
-                              {
-                                return Context.error("Expect function.", e.pos);
-                              }
                             }
-                          }
-                          var a = toReverseArray(transformedParameters);
-                          a.push(
-                            {
-                              pos: origin.pos,
-                              expr: EFunction(null,
+                            a.push(
                               {
-                                ret: null,
-                                params: [],
-                                expr: rest(handlerArgResult),
-                                args: handlerArgDefs
-                              })
-                            });
+                                pos: origin.pos,
+                                expr: EFunction(handlerName,
+                                {
+                                  ret: null,
+                                  params: [],
+                                  expr: rest(handlerArgResult),
+                                  args: handlerArgDefs
+                                }),
+                              });
+                          }
+                          else
+                          {
+                            a.push(
+                              {
+                                pos: origin.pos,
+                                expr: EConst(CIdent(handlerName))
+                              });
+                          }
                           return
                           {
                             pos: origin.pos,
                             expr: ECall(transformedCalleeExpr, a),
                           };
                         });
+                        return macro
+                        {
+                          $declarationExpr;
+                          $startAsyncExpr;
+                        }
                       }
                       else
                       {
                         return transformNoDelay(
                           originParams[i],
+                          ANY,
                           function(parameterResult:Array<Expr>):Expr
                           {
                             return transformNext(
@@ -1111,7 +1322,7 @@ class ContinuationDetail
         {
           if (i == originParams.length)
           {
-            return transformNoDelay(e, function(functionResult)
+            return transformNoDelay(e, EXACT(1), function(functionResult)
             {
               var handlerArgResult = [];
               var handlerArgDefs = [];
@@ -1128,6 +1339,7 @@ class ContinuationDetail
           {
             return transformNoDelay(
               originParams[i],
+              ANY,
               function(parameterResult:Array<Expr>):Expr
               {
                 return transformNext(
@@ -1154,11 +1366,11 @@ class ContinuationDetail
         {
           if (i == exprs.length - 1)
           {
-            return transform(exprs[i], rest);
+            return transform(exprs[i], parameterRequirement, rest);
           }
           else
           {
-            return transform(exprs[i], function(transformedLine)
+            return transform(exprs[i], IGNORE, function(transformedLine)
             {
               transformedLine.push(transformNext(i + 1));
               return
@@ -1177,19 +1389,20 @@ class ContinuationDetail
         {
           case OpBoolOr:
           {
-            return transformNoDelay(macro $e1 ? true : $e2 ? true : false, rest);
+            return transformNoDelay(macro $e1 ? true : $e2 ? true : false, parameterRequirement, rest);
           }
           case OpBoolAnd:
           {
-            return transformNoDelay(macro $e1 ? $e2 ? true : false : false, rest);
+            return transformNoDelay(macro $e1 ? $e2 ? true : false : false, parameterRequirement, rest);
           }
           default:
           {
             return transformNoDelay(
               e1,
+              EXACT(1),
               function(e1Result)
               {
-                return transformNoDelay(e2, function(e2Result)
+                return transformNoDelay(e2, EXACT(1), function(e2Result)
                 {
                   return rest(
                     [
@@ -1225,6 +1438,7 @@ class ContinuationDetail
           {
             return transformNoDelay(
               originParams[i],
+              ANY,
               function(parameterResult:Array<Expr>):Expr
               {
                 return transformNext(
@@ -1241,9 +1455,10 @@ class ContinuationDetail
       {
         return transformNoDelay(
           e1,
+          EXACT(1),
           function(e1Result)
           {
-            return transformNoDelay(e2, function(e2Result)
+            return transformNoDelay(e2, EXACT(1), function(e2Result)
             {
               return rest(
                 [
@@ -1259,7 +1474,7 @@ class ContinuationDetail
       }
     }
   }
-  
+
   @:isVar
   static var delayFunctions(get_delayFunctions, set_delayFunctions):Array<Void->Expr>;
 
@@ -1284,7 +1499,7 @@ class ContinuationDetail
       return delayFunctions;
     }
   }
-  
+
   static function delay(pos:Position, delayedFunction:Void->Expr):Expr
   {
     var id = delayFunctions.length;
@@ -1296,9 +1511,9 @@ class ContinuationDetail
       expr: ECall(macro com.dongxiguo.continuation.Continuation.ContinuationDetail.runDelayedFunction, [idExpr]),
     }
   }
-  
+
   #end
-  
+
   @:noUsing
   #if haxe3 macro #else @:macro #end
   public static function runDelayedFunction(id:Int):Expr
@@ -1342,3 +1557,145 @@ class ContinuationDetail
   #end
 }
 
+#if macro
+private enum ParameterRequirement
+{
+
+  /** 必须正好是numParameters个参数 */
+  EXACT(numParameters:Int);
+
+  /** 忽略参数 */
+  IGNORE;
+
+  /** 接受任意数量的参数 */
+  ANY;
+
+}
+
+private class Wrapper
+{
+  static var seed:Int = 0;
+
+  public var declearation(default, null):Expr;
+
+  public var invocation(default, null):Array<Expr>->Expr;
+
+  static function newWrapper(
+    functionName:String,
+    numParameters:Int,
+    rest:Array<Expr>->Expr):Expr
+  {
+    var parameterNames:Array<String> = [];
+    for (i in 0...numParameters)
+    {
+      parameterNames.push(functionName + "_parameter_" + i);
+    }
+    return
+    {
+      pos: Context.currentPos(),
+      expr: EFunction(
+        functionName,
+        {
+          args:
+          {
+            var functionArgs:Array<FunctionArg> = [];
+            for (parameterName in parameterNames)
+            {
+              functionArgs.push(
+                {
+                  name: parameterName,
+                  opt: false,
+                  type: null,
+                  value: null,
+                });
+            }
+            functionArgs;
+          },
+          ret: null,
+          params: [],
+          expr:
+          {
+            pos: Context.currentPos(),
+            expr: EReturn(
+              rest(
+                {
+                  var parameterExprs = [];
+                  for (parameterName in parameterNames)
+                  {
+                    parameterExprs.push(
+                    {
+                      pos: Context.currentPos(),
+                      expr: EConst(CIdent(parameterName)),
+                    });
+                  }
+                  parameterExprs;
+                }))
+          }
+        }),
+    }
+  }
+
+  public function new(
+    parameterRequirement:ParameterRequirement,
+    rest:Array<Expr>->Expr)
+  {
+    switch (parameterRequirement)
+    {
+      case ANY:
+      {
+        this.declearation =
+        {
+          pos: Context.currentPos(),
+          expr: EBlock([]),
+        };
+        this.invocation = rest;
+      }
+      case IGNORE:
+        var functionName = "__wrapper_" + Std.string(seed++);
+        this.declearation = newWrapper(functionName, 0, rest);
+        this.invocation = function(parameters:Array<Expr>):Expr
+        {
+          return
+          {
+            pos: Context.currentPos(),
+            expr: EBlock(parameters.concat(
+              [
+                {
+                  pos: Context.currentPos(),
+                  expr: ECall(
+                    {
+                      pos: Context.currentPos(),
+                      expr: EConst(CIdent(functionName)),
+                    },
+                    []),
+                }
+              ])),
+          };
+        };
+      case EXACT(numParameters):
+        var functionName = "__wrapper_" + Std.string(seed++);
+        this.declearation = newWrapper(functionName, numParameters, rest);
+        this.invocation = function(parameters:Array<Expr>):Expr
+        {
+          return
+          {
+            pos: Context.currentPos(),
+            expr: EBlock(parameters.concat(
+              [
+                {
+                  pos: Context.currentPos(),
+                  expr: ECall(
+                    {
+                      pos: Context.currentPos(),
+                      expr: EConst(CIdent(functionName)),
+                    },
+                    parameters),
+                }
+              ])),
+          };
+        };
+    }
+  }
+
+}
+#end

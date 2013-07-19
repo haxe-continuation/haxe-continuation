@@ -22,14 +22,14 @@ com/dongxiguo/continuation/Continuation.hx \
 com/dongxiguo/continuation/utils/ForkJoin.hx \
 tests/TestForkJoin.hx \
 | bin
-	haxe -cs $@ -main tests.TestForkJoin
+	#haxe -cs $@ -main tests.TestForkJoin
 
 bin/TestForkJoin_java: \
 com/dongxiguo/continuation/Continuation.hx \
 com/dongxiguo/continuation/utils/ForkJoin.hx \
 tests/TestForkJoin.hx \
 | bin
-	haxe -java $@ -main tests.TestForkJoin
+	#haxe -java $@ -main tests.TestForkJoin
 
 bin/TestForkJoin.swf: \
 com/dongxiguo/continuation/Continuation.hx \
@@ -74,14 +74,14 @@ com/dongxiguo/continuation/Continuation.hx \
 tests/Sample.hx \
 | bin
 	$(RM) -r $@
-	haxe -java $@ -main tests.Sample
+	#haxe -java $@ -main tests.Sample
 
 bin/Sample_cs: \
 com/dongxiguo/continuation/Continuation.hx \
 tests/Sample.hx \
 | bin
 	$(RM) -r $@
-	haxe -cs $@ -main tests.Sample
+	#haxe -cs $@ -main tests.Sample
 
 bin/Sample.swf: \
 com/dongxiguo/continuation/Continuation.hx \

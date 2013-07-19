@@ -1,11 +1,11 @@
 // Copyright (c) 2012,2013, 杨博 (Yang Bo)
 // All rights reserved.
-// 
+//
 // Author: 杨博 (Yang Bo) <pop.atry@gmail.com>
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 // * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the following disclaimer.
 // * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
 // * Neither the name of the <ORGANIZATION> nor the names of its contributors
 //   may be used to endorse or promote products derived from this software
 //   without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,19 +29,44 @@
 
 package tests;
 
+#if haxe3
+import haxe.ds.IntMap;
+#else
+private typedef IntMap<Element> = IntHash<Element>;
+#end
+
 using com.dongxiguo.continuation.Continuation;
 
 /**
  * @author 杨博
  */
-@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
-class TestContinuation 
+@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
+class TestContinuation
 {
-
-  
-  @cps static function forkJoin():Int
+  @:cps static function ifNull(?p:Int)
   {
-    var a = [1, 2, 3, 4];
+    if (p == null)
+    {
+      p = 1;
+    }
+    trace(p);
+  }
+
+  @:cps static function maybeTuple():Void
+  {
+    if (Math.random() < 0.5)
+    {
+      forkJoin().async();
+    }
+    else
+    {
+      tuple2(1, 2).async();
+    }
+  }
+
+  @:cps static function forkJoin():Int
+  {
+    var a:Array<Int> = [1, 2, 3, 4];
     var joiner = new Counter(a.length);
     Lambda.iter(a).async();
     trace(a);
@@ -57,30 +82,30 @@ class TestContinuation
       return 2;
     }
   }
-  
+
   static function good(a, b):Int
   {
     trace(a + b);
     return a + b;
   }
-  
-  static function xx(xxx):Int return 1
+
+  static function xx(xxx):Int { return 1; }
 
   static function read(n:Int, handler:Int -> Void):Void
   {
   }
 
-  @cps static function write(n:Int):Int
+  @:cps static function write(n:Int):Int
   {
     forkJoin().async();
     return n + 1;
   }
-  @cps static function void1(n:Int):Void
+  @:cps static function void1(n:Int):Void
   {
     return;
   }
-  
-  @cps static function void2(n:Int):Void
+
+  @:cps static function void2(n:Int):Void
   {
     if (false)
     {
@@ -89,8 +114,8 @@ class TestContinuation
     }
     return void1(n).async();
   }
-  
-  @cps static function baz(n:Int):Int
+
+  @:cps static function baz(n:Int):Int
   {
     if (false)
     {
@@ -100,11 +125,11 @@ class TestContinuation
     void2(3).async();
     return foo(n + 3).async();
   }
-  
+
   static inline function hang0(handler:Void->Void):Void {}
   static inline function hang1<T>(handler:T->Void):Void {}
-  
-  @cps static function foo(n:Int):Int
+
+  @:cps static function foo(n:Int):Int
   {
     if (true)
     {
@@ -113,25 +138,25 @@ class TestContinuation
     }
     return read(3).async() * 4 + hang1().async();
   }
-  
+
   static function bar(n:Int, s:String, f:Float, handler:Int->Void):Void
   {
-    
+
   }
-  
+
   inline static function tuple2(p0, p1, handler):Void
   {
     handler(p0, p1);
   }
-  
+
   static function doubleResult(handler:Int->String->Void):Void
   {
-    
+
   }
-  
+
   static function dummy():Void {}
-  
-  static function main() 
+
+  static function main()
   {
     baz(4, function(result)
     {
@@ -183,7 +208,7 @@ class TestContinuation
           {
             foo(read(x[0]).async()).async();
           }
-          catch (x:IntHash<Dynamic>)
+          catch (x:IntMap<Dynamic>)
           {
           }
           catch (x:String)
@@ -204,12 +229,12 @@ class TestContinuation
         return good(3, 2);
       }
     );
-    
+
     Continuation.cpsFunction(function functionOfFunction():(Int->Void)->Void
     {
       return function():Int { return 1; }.cpsFunction();
     });
-    
+
     Continuation.cpsFunction(function myFunction():Int
     {
       var ff = functionOfFunction().async();
@@ -222,12 +247,16 @@ class TestContinuation
       var c = 1, a, b = doubleResult().async();
       return tuple2(c, a).async();
     });
+    #if haxe3
+    var asyncDo = read.bind(3);
+    #else
     var asyncDo = callback(read, 3);
+    #end
     Continuation.cpsFunction(function myFunction():Int
     {
       var xxx = bar(234, "foo", 34.5).async();
       var result = read(2).async();
-      
+
       var z = asyncDo().async() + 2 * bar(asyncDo().async(), "foo", 34.5).async() + read(read(2).async()).async();
       var x = good(asyncDo().async(), bar(asyncDo().async(), "foo", 34.5).async());
       var c = asyncDo().async();
@@ -235,7 +264,7 @@ class TestContinuation
       var b = 3 + 4 + c, d = a +  asyncDo().async(), e = asyncDo().async() * asyncDo().async();
       return asyncDo().async() + a + b * e + d - c;
     });
-    
+
     Continuation.cpsFunction(function myFunction2():Int
     {
       good(3, 4);
@@ -286,7 +315,7 @@ class TestContinuation
           43;
         }) + (if (asyncDo().async() == 0) { asyncDo().async(); } else { 1; } );
     });
-    
+
     Continuation.cpsFunction(function testWhile():Int
     {
       while (asyncDo().async() > 1)
@@ -302,12 +331,12 @@ class TestContinuation
     {
       do
       {
-        
+
       }
       while (true);
     });
   }
-  
-  
+
+
 }
 typedef A = Int;
