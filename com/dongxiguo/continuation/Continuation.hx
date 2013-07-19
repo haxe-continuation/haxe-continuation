@@ -716,7 +716,8 @@ class ContinuationDetail
               return { expr: transform(c.expr, ANY, wrapper.invocation), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
             }
           }).array();
-          var transformedDef = edef == null ? null : transform(edef, ANY, wrapper.invocation);
+          var defaultInvocation = parameterRequirement == IGNORE ? wrapper.invocation([]) : null ;
+          var transformedDef = edef == null ? defaultInvocation : transform(edef, ANY, wrapper.invocation);
           var entry =
           {
             pos: origin.pos,
