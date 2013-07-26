@@ -300,6 +300,8 @@ class ContinuationDetail
         };
         var breakName =
           "__break_" + seed++;
+        var inlineBreakName =
+          "inline_" + breakName;
         var breakIdent =
         {
           pos: origin.pos,
@@ -330,32 +332,61 @@ class ContinuationDetail
             };
           });
         var breakBody = rest([]);
-        var startIdent = normalWhile ? macro $continueIdent : macro __do;
-        return macro
+        if (normalWhile)
         {
-          function $breakName():Void
+          return macro
           {
-            $breakBody;
-          }
-          var $continueName = null;
-          inline function __do()
-          {
-            inline function __break()
+            function $inlineBreakName():Void
             {
-              $breakIdent();
+              $breakBody;
             }
-            inline function __continue()
+            function $continueName():Void
             {
-              $continueIdent();
+              inline function __do()
+              {
+                inline function __break()
+                {
+                  $breakIdent();
+                }
+                inline function __continue()
+                {
+                  $continueIdent();
+                }
+                $doBody;
+              }
+              $continueBody;
             }
-            $doBody;
+            $continueIdent();
           }
-          $continueIdent = function():Void
+        }
+        else
+        {
+          var inlineContinueName = "inline_" + continueName;
+          return macro
           {
-            $continueBody;
+            function $inlineBreakName():Void
+            {
+              $breakBody;
+            }
+            function __do()
+            {
+              function $inlineContinueName():Void
+              {
+                $continueBody;
+              }
+              inline function __break()
+              {
+                $breakIdent();
+              }
+              inline function __continue()
+              {
+                $continueIdent();
+              }
+              $doBody;
+            }
+            __do();
           }
-          $startIdent();
-        };
+        }
       }
       case EVars(originVars):
       {
@@ -422,87 +453,60 @@ class ContinuationDetail
             }
           }
         }
-        var assign =
-        {
-          pos: origin.pos,
-          expr: EBinop(
-            OpAssign,
-            {
-              pos: origin.pos,
-              expr: EConst(CIdent(functionName)),
-            },
-            {
-              pos: origin.pos,
-              expr: EFunction(
-                null,
-                {
-                  params: [],
-                  args:
-                  {
-                    var functionArgs = [];
-                    for (originVar in originVars)
-                    functionArgs.push({
-                      name: originVar.name,
-                      opt: false,
-                      type: originVar.type,
-                      value: null,
-                    });
-                    functionArgs;
-                  },
-                  ret: null,
-                  expr:
-                  {
-                    pos: origin.pos,
-                    expr: EReturn(rest([])),
-                  }
-                }),
-            }),
-        }
         var entry = transformNext(0, []);
-        var declearation =
+        return
         {
           pos: origin.pos,
-          expr: EBinop(
-            OpAssign,
+          expr: ECall(
             {
               pos: origin.pos,
-              expr: EConst(CIdent(functionName)),
-            },
-            {
-              pos: origin.pos,
-              expr: EFunction(
-                null,
+              expr: EFunction(null,
                 {
+                  ret: null,
+                  expr: entry,
                   params: [],
                   args:
-                  {
-                    var functionArgs = [];
-                    for (originVar in originVars)
+                  [
                     {
-                      functionArgs.push({
-                        name: originVar.name,
-                        opt: false,
-                        type: originVar.type,
-                        value: null,
-                      });
-                    }
-                    functionArgs;
-                  },
-                  ret: null,
-                  expr: macro return throw "This code must be elimited!",
+                      name: functionName,
+                      opt: false,
+                      type: null,
+                      value: null,
+                    },
+                  ],
                 }),
-            }),
-        }
-        return macro
-        {
-          var $functionName;
-          if (false) $declearation; // Type hint
-          inline function __entry()
-          {
-            $entry;
-          }
-          $assign;
-          __entry();
+            },
+            [
+              {
+                pos: origin.pos,
+                expr: EFunction(
+                  null,
+                  {
+                    params: [],
+                    args:
+                    {
+                      var functionArgs = [];
+                      for (originVar in originVars)
+                      {
+                        functionArgs.push(
+                          {
+                            name: originVar.name,
+                            opt: false,
+                            type: originVar.type,
+                            value: null,
+                          });
+                      }
+                      functionArgs;
+                    },
+                    ret: null,
+                    expr:
+                    {
+                      pos: origin.pos,
+                      expr: EReturn(rest([])),
+                    }
+                  }),
+              },
+            ]),
         }
       }
       case EUntyped(e):
@@ -1561,7 +1565,7 @@ private class Wrapper
       }
       case IGNORE:
         var functionName = "__wrapper_" + Std.string(seed++);
-        this.declearation = newWrapper(functionName, 0, rest);
+        this.declearation = newWrapper("inline_" + functionName, 0, rest);
         this.invocation = function(parameters:Array<Expr>):Expr
         {
           return
@@ -1583,7 +1587,7 @@ private class Wrapper
         };
       case EXACT(numParameters):
         var functionName = "__wrapper_" + Std.string(seed++);
-        this.declearation = newWrapper(functionName, numParameters, rest);
+        this.declearation = newWrapper("inline_" + functionName, numParameters, rest);
         this.invocation = function(parameters:Array<Expr>):Expr
         {
           return
