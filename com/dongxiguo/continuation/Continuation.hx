@@ -298,10 +298,12 @@ class ContinuationDetail
           pos: origin.pos,
           expr: EConst(CIdent(continueName))
         };
-        var breakName =
-          "__break_" + seed++;
-        var inlineBreakName =
-          "inline_" + breakName;
+        var breakName = "__break_" + seed++;
+        #if no-inline
+          var inlineBreakName = breakName;
+        #else
+          var inlineBreakName = "inline_" + breakName;
+        #end
         var breakIdent =
         {
           pos: origin.pos,
@@ -342,13 +344,13 @@ class ContinuationDetail
             }
             function $continueName():Void
             {
-              inline function __do()
+              #if no-inline #else inline #end function __do()
               {
-                inline function __break()
+                #if no-inline #else inline #end function __break()
                 {
                   $breakIdent();
                 }
-                inline function __continue()
+                #if no-inline #else inline #end function __continue()
                 {
                   $continueIdent();
                 }
@@ -361,24 +363,29 @@ class ContinuationDetail
         }
         else
         {
-          var inlineContinueName = "inline_" + continueName;
+          #if no-inline
+            var inlineContinueName = continueName;
+          #else
+            var inlineContinueName = "inline_" + continueName;
+          #end
           return macro
           {
             function $inlineBreakName():Void
             {
               $breakBody;
             }
+            #if no-inline #else inline #end
             function __do()
             {
               function $inlineContinueName():Void
               {
                 $continueBody;
               }
-              inline function __break()
+              #if no-inline #else inline #end function __break()
               {
                 $breakIdent();
               }
-              inline function __continue()
+              #if no-inline #else inline #end function __continue()
               {
                 $continueIdent();
               }
@@ -960,7 +967,7 @@ class ContinuationDetail
             var getIteratorExpr = macro
             {
               var __tempIterator = null;
-              inline function setIterator<T>(
+              #if (!no-inline) inline #end function setIterator<T>(
                 ?iterable:Iterable<T> = null,
                 ?iterator:Iterator<T> = null):Void
               {
@@ -1493,7 +1500,7 @@ private class Wrapper
 
   public var invocation(default, null):Array<Expr>->Expr;
 
-  static function newWrapper(
+  static function declearWrapper(
     functionName:String,
     numParameters:Int,
     rest:Array<Expr>->Expr):Expr
@@ -1565,7 +1572,11 @@ private class Wrapper
       }
       case IGNORE:
         var functionName = "__wrapper_" + Std.string(seed++);
-        this.declearation = newWrapper("inline_" + functionName, 0, rest);
+        #if no-inline
+          this.declearation = declearWrapper(functionName, 0, rest);
+        #else
+          this.declearation = declearWrapper("inline_" + functionName, 0, rest);
+        #end
         this.invocation = function(parameters:Array<Expr>):Expr
         {
           return
@@ -1587,7 +1598,11 @@ private class Wrapper
         };
       case EXACT(numParameters):
         var functionName = "__wrapper_" + Std.string(seed++);
-        this.declearation = newWrapper("inline_" + functionName, numParameters, rest);
+        #if no-inline
+          this.declearation = declearWrapper(functionName, numParameters, rest);
+        #else
+          this.declearation = declearWrapper("inline_" + functionName, numParameters, rest);
+        #end
         this.invocation = function(parameters:Array<Expr>):Expr
         {
           return
