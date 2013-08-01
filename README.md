@@ -47,7 +47,7 @@ before a class, and marking the CPS functions in that class as `@:cps`:
       }
     
       // Because of the magic @:cps, this function will be transform to:
-      // static function asyncText(__return:Void->Void):Void
+      // static function asyncTest(__return:Void->Void):Void
       @:cps static function asyncTest():Void
       {
         trace("Start continuation.");
