@@ -88,7 +88,7 @@ Another way is using `Continuation.cpsFunction` macro to write nested CPS functi
       public static function main() 
       {
         // This magic macro will transform function asyncTest to:
-        // function asyncText(__return:Void->Void):Void
+        // function asyncTest(__return:Void->Void):Void
         Continuation.cpsFunction(function asyncTest():Void
         {
           trace("Start continuation.");
