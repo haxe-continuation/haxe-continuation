@@ -716,23 +716,44 @@ class ContinuationDetail
         var wrapper = new Wrapper(parameterRequirement, rest);
         return transformNoDelay(e, EXACT(1), function(eResult)
         {
+          #if (haxe_211 || haxe3)
+          function transformGuard(guard:Null<Expr>):Expr
+          {
+            // Workaround to enable default:
+            return parameterRequirement == IGNORE && guard == null ? macro true : guard;
+          }
+          #end
           var transformedCases = cases.map(function(c)
           {
             if (c.expr == null)
             {
-              return { expr: wrapper.invocation([]), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
+              return { expr: wrapper.invocation([]), #if (haxe_211 || haxe3) guard: transformGuard(c.guard), #end values: c.values };
             }
             else
             {
-              return { expr: transform(c.expr, ANY, wrapper.invocation), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
+              return { expr: transform(c.expr, ANY, wrapper.invocation), #if (haxe_211 || haxe3) guard: transformGuard(c.guard), #end values: c.values };
             }
           }).array();
-          var defaultInvocation = parameterRequirement == IGNORE ? wrapper.invocation([]) : null ;
-          var transformedDef = edef == null ? defaultInvocation : transform(edef, ANY, wrapper.invocation);
-          var entry =
+          var entry = if (edef == null)
           {
             pos: origin.pos,
-            expr: ESwitch(unpack(eResult, e.pos), transformedCases, transformedDef),
+            expr: ESwitch(
+              unpack(eResult, e.pos),
+              transformedCases,
+              parameterRequirement == IGNORE ? wrapper.invocation([]) : null),
+          }
+          else if (edef.expr == null)
+          {
+            pos: origin.pos,
+            expr: ESwitch(unpack(eResult, e.pos), transformedCases, wrapper.invocation([])),
+          }
+          else
+          {
+            var transformedDef = transform(edef, ANY, wrapper.invocation);
+            {
+              pos: origin.pos,
+              expr: ESwitch(unpack(eResult, e.pos), transformedCases, macro { $transformedDef; } ),
+            }
           }
           var declearation = wrapper.declearation;
           return macro
