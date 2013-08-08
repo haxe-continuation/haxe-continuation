@@ -374,7 +374,6 @@ class ContinuationDetail
             {
               $breakBody;
             }
-            #if no-inline #else inline #end
             function __do()
             {
               function $inlineContinueName():Void
