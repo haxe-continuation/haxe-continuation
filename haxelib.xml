@@ -12,5 +12,5 @@
     <tag v="neko"/>
     <tag v="php"/>
     <description>Enable continuation in Haxe</description>
-    <version name="1.1.2">Fixed error about recursive inline functions.</version>
+    <version name="1.1.3">Fixed syntax error for Haxe 2.10.</version>
 </project>

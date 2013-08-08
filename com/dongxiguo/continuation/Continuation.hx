@@ -987,7 +987,7 @@ class ContinuationDetail
             var getIteratorExpr = macro
             {
               var __tempIterator = null;
-              #if (!no-inline) inline #end function setIterator<T>(
+              #if no-inline #else inline #end function setIterator<T>(
                 ?iterable:Iterable<T> = null,
                 ?iterator:Iterator<T> = null):Void
               {
