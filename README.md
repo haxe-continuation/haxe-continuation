@@ -46,8 +46,8 @@ before a class, and marking the CPS functions in that class as `@:cps`:
         haxe.Timer.delay(handler, 1000);
       }
     
-      // Because of the magic @:cps, this function Will be transform to:
-      // static function asyncText(__return:Void->Void):Void
+      // Because of the magic @:cps, this function will be transform to:
+      // static function asyncTest(__return:Void->Void):Void
       @:cps static function asyncTest():Void
       {
         trace("Start continuation.");
@@ -88,7 +88,7 @@ Another way is using `Continuation.cpsFunction` macro to write nested CPS functi
       public static function main() 
       {
         // This magic macro will transform function asyncTest to:
-        // function asyncText(__return:Void->Void):Void
+        // function asyncTest(__return:Void->Void):Void
         Continuation.cpsFunction(function asyncTest():Void
         {
           trace("Start continuation.");

@@ -298,8 +298,12 @@ class ContinuationDetail
           pos: origin.pos,
           expr: EConst(CIdent(continueName))
         };
-        var breakName =
-          "__break_" + seed++;
+        var breakName = "__break_" + seed++;
+        #if no-inline
+          var inlineBreakName = breakName;
+        #else
+          var inlineBreakName = "inline_" + breakName;
+        #end
         var breakIdent =
         {
           pos: origin.pos,
@@ -330,32 +334,66 @@ class ContinuationDetail
             };
           });
         var breakBody = rest([]);
-        var startIdent = normalWhile ? macro $continueIdent : macro __do;
-        return macro
+        if (normalWhile)
         {
-          function $breakName():Void
+          return macro
           {
-            $breakBody;
-          }
-          var $continueName = null;
-          inline function __do()
-          {
-            inline function __break()
+            function $inlineBreakName():Void
             {
-              $breakIdent();
+              $breakBody;
             }
-            inline function __continue()
+            function $continueName():Void
             {
-              $continueIdent();
+              #if no-inline #else inline #end function __do()
+              {
+                #if no-inline #else inline #end function __break()
+                {
+                  $breakIdent();
+                }
+                #if no-inline #else inline #end function __continue()
+                {
+                  $continueIdent();
+                }
+                $doBody;
+              }
+              $continueBody;
             }
-            $doBody;
+            $continueIdent();
           }
-          $continueIdent = function():Void
+        }
+        else
+        {
+          #if no-inline
+            var inlineContinueName = continueName;
+          #else
+            var inlineContinueName = "inline_" + continueName;
+          #end
+          return macro
           {
-            $continueBody;
+            function $inlineBreakName():Void
+            {
+              $breakBody;
+            }
+            #if no-inline #else inline #end
+            function __do()
+            {
+              function $inlineContinueName():Void
+              {
+                $continueBody;
+              }
+              #if no-inline #else inline #end function __break()
+              {
+                $breakIdent();
+              }
+              #if no-inline #else inline #end function __continue()
+              {
+                $continueIdent();
+              }
+              $doBody;
+            }
+            __do();
           }
-          $startIdent();
-        };
+        }
       }
       case EVars(originVars):
       {
@@ -422,87 +460,60 @@ class ContinuationDetail
             }
           }
         }
-        var assign =
-        {
-          pos: origin.pos,
-          expr: EBinop(
-            OpAssign,
-            {
-              pos: origin.pos,
-              expr: EConst(CIdent(functionName)),
-            },
-            {
-              pos: origin.pos,
-              expr: EFunction(
-                null,
-                {
-                  params: [],
-                  args:
-                  {
-                    var functionArgs = [];
-                    for (originVar in originVars)
-                    functionArgs.push({
-                      name: originVar.name,
-                      opt: false,
-                      type: originVar.type,
-                      value: null,
-                    });
-                    functionArgs;
-                  },
-                  ret: null,
-                  expr:
-                  {
-                    pos: origin.pos,
-                    expr: EReturn(rest([])),
-                  }
-                }),
-            }),
-        }
         var entry = transformNext(0, []);
-        var declearation =
+        return
         {
           pos: origin.pos,
-          expr: EBinop(
-            OpAssign,
+          expr: ECall(
             {
               pos: origin.pos,
-              expr: EConst(CIdent(functionName)),
-            },
-            {
-              pos: origin.pos,
-              expr: EFunction(
-                null,
+              expr: EFunction(null,
                 {
+                  ret: null,
+                  expr: entry,
                   params: [],
                   args:
-                  {
-                    var functionArgs = [];
-                    for (originVar in originVars)
+                  [
                     {
-                      functionArgs.push({
-                        name: originVar.name,
-                        opt: false,
-                        type: originVar.type,
-                        value: null,
-                      });
-                    }
-                    functionArgs;
-                  },
-                  ret: null,
-                  expr: macro return throw "This code must be elimited!",
+                      name: functionName,
+                      opt: false,
+                      type: null,
+                      value: null,
+                    },
+                  ],
                 }),
-            }),
-        }
-        return macro
-        {
-          var $functionName;
-          if (false) $declearation; // Type hint
-          inline function __entry()
-          {
-            $entry;
-          }
-          $assign;
-          __entry();
+            },
+            [
+              {
+                pos: origin.pos,
+                expr: EFunction(
+                  null,
+                  {
+                    params: [],
+                    args:
+                    {
+                      var functionArgs = [];
+                      for (originVar in originVars)
+                      {
+                        functionArgs.push(
+                          {
+                            name: originVar.name,
+                            opt: false,
+                            type: originVar.type,
+                            value: null,
+                          });
+                      }
+                      functionArgs;
+                    },
+                    ret: null,
+                    expr:
+                    {
+                      pos: origin.pos,
+                      expr: EReturn(rest([])),
+                    }
+                  }),
+              },
+            ]),
         }
       }
       case EUntyped(e):
@@ -705,23 +716,44 @@ class ContinuationDetail
         var wrapper = new Wrapper(parameterRequirement, rest);
         return transformNoDelay(e, EXACT(1), function(eResult)
         {
+          #if (haxe_211 || haxe3)
+          function transformGuard(guard:Null<Expr>):Expr
+          {
+            // Workaround to enable default:
+            return parameterRequirement == IGNORE && guard == null ? macro true : guard;
+          }
+          #end
           var transformedCases = cases.map(function(c)
           {
             if (c.expr == null)
             {
-              return { expr: wrapper.invocation([]), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
+              return { expr: wrapper.invocation([]), #if (haxe_211 || haxe3) guard: transformGuard(c.guard), #end values: c.values };
             }
             else
             {
-              return { expr: transform(c.expr, ANY, wrapper.invocation), #if (haxe_211 || haxe3) guard: c.guard, #end values: c.values };
+              return { expr: transform(c.expr, ANY, wrapper.invocation), #if (haxe_211 || haxe3) guard: transformGuard(c.guard), #end values: c.values };
             }
           }).array();
-          var defaultInvocation = parameterRequirement == IGNORE ? wrapper.invocation([]) : null ;
-          var transformedDef = edef == null ? defaultInvocation : transform(edef, ANY, wrapper.invocation);
-          var entry =
+          var entry = if (edef == null)
           {
             pos: origin.pos,
-            expr: ESwitch(unpack(eResult, e.pos), transformedCases, transformedDef),
+            expr: ESwitch(
+              unpack(eResult, e.pos),
+              transformedCases,
+              parameterRequirement == IGNORE ? wrapper.invocation([]) : null),
+          }
+          else if (edef.expr == null)
+          {
+            pos: origin.pos,
+            expr: ESwitch(unpack(eResult, e.pos), transformedCases, wrapper.invocation([])),
+          }
+          else
+          {
+            var transformedDef = transform(edef, ANY, wrapper.invocation);
+            {
+              pos: origin.pos,
+              expr: ESwitch(unpack(eResult, e.pos), transformedCases, macro { $transformedDef; } ),
+            }
           }
           var declearation = wrapper.declearation;
           return macro
@@ -956,7 +988,7 @@ class ContinuationDetail
             var getIteratorExpr = macro
             {
               var __tempIterator = null;
-              inline function setIterator<T>(
+              #if (!no-inline) inline #end function setIterator<T>(
                 ?iterable:Iterable<T> = null,
                 ?iterator:Iterator<T> = null):Void
               {
@@ -1489,7 +1521,7 @@ private class Wrapper
 
   public var invocation(default, null):Array<Expr>->Expr;
 
-  static function newWrapper(
+  static function declearWrapper(
     functionName:String,
     numParameters:Int,
     rest:Array<Expr>->Expr):Expr
@@ -1561,7 +1593,11 @@ private class Wrapper
       }
       case IGNORE:
         var functionName = "__wrapper_" + Std.string(seed++);
-        this.declearation = newWrapper(functionName, 0, rest);
+        #if no-inline
+          this.declearation = declearWrapper(functionName, 0, rest);
+        #else
+          this.declearation = declearWrapper("inline_" + functionName, 0, rest);
+        #end
         this.invocation = function(parameters:Array<Expr>):Expr
         {
           return
@@ -1583,7 +1619,11 @@ private class Wrapper
         };
       case EXACT(numParameters):
         var functionName = "__wrapper_" + Std.string(seed++);
-        this.declearation = newWrapper(functionName, numParameters, rest);
+        #if no-inline
+          this.declearation = declearWrapper(functionName, numParameters, rest);
+        #else
+          this.declearation = declearWrapper("inline_" + functionName, numParameters, rest);
+        #end
         this.invocation = function(parameters:Array<Expr>):Expr
         {
           return
