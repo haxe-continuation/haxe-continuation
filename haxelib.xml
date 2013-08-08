@@ -12,5 +12,5 @@
     <tag v="neko"/>
     <tag v="php"/>
     <description>Enable continuation in Haxe</description>
-    <version name="1.1.0">Optimize the generated code size.</version>
+    <version name="1.1.1">Optimized the generated code size; Fixed bugs about switch.</version>
 </project>
