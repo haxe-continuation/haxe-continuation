@@ -33,14 +33,14 @@ haxe-continuation requires Haxe 2.10 or Haxe 3.
 ## Usage
 
 To write a CPS function, put `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))`
-before a class, and marking the CPS functions in that class as `@:cps`:
+before a class, and mark the CPS functions in that class as `@:cps`:
 
     import com.dongxiguo.continuation.Continuation;
     @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
     class Sample
     {
     
-      // An asynchronous function without automatically CPS transformation.
+      // An asynchronous function without automatical CPS transformation.
       static function sleepOneSecond(handler:Void->Void):Void
       {
         haxe.Timer.delay(handler, 1000);
