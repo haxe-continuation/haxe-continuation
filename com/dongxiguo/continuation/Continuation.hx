@@ -508,7 +508,25 @@ class ContinuationDetail
                     expr:
                     {
                       pos: origin.pos,
-                      expr: EReturn(rest([])),
+                      expr: EBlock(
+                        {
+                          var exprs = [];
+                          // Workaround for https://github.com/HaxeFoundation/haxe/issues/2069
+                          for (originVar in originVars)
+                          {
+                            exprs.push(
+                              {
+                                pos: origin.pos,
+                                expr: EConst(CIdent(originVar.name)),
+                              });
+                          }
+                          exprs.push(rest([]));
+                            //{
+                              //pos: origin.pos,
+                              //expr: EReturn(rest([])),
+                            //});
+                          exprs;
+                        }),
                     }
                   }),
               },
