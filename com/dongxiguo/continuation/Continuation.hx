@@ -1312,7 +1312,16 @@ class ContinuationDetail
       }
       case EBreak:
       {
-        return macro __break();
+        return
+        {
+          pos: origin.pos,
+          expr: ECall(
+            {
+              pos: origin.pos,
+              expr: EConst(CIdent("__break")),
+            },
+            [])
+        };
       }
       case EBlock(exprs):
       {
