@@ -5,14 +5,14 @@ An *asynchronous functions* is a function that accept its last parameter
 as a callback function.
 And **haxe-continuation** is a macro library enables you to invoke and write
 asynchronous functions like a synchronization function, and automatically
-transform the function into *continuation-passing style (CPS)*. That means
+transform these functions into *continuation-passing style (CPS)*. That means
 you can write code looks like *multithreading* without platform
 multithreading support.
 
 ## Installation
 
-I have upload haxe-continuation to haxelib. To install, type the following
-command in shell:
+I have uploaded haxe-continuation on [haxelib](http://lib.haxe.org/p/continuation).
+To install, type the following command in shell:
 
     haxelib install continuation
 
