@@ -4,7 +4,7 @@ haxe-continuation
 An *asynchronous functions* is a function that accept its last parameter 
 as a callback function.
 And **haxe-continuation** is a macro library enables you to invoke and write
-asynchronous functions like a synchronization function, and automatically
+asynchronous functions like synchronization functions, and automatically
 transform these functions into *continuation-passing style (CPS)*. That means
 you can write code looks like *multithreading* without platform
 multithreading support.
