@@ -46,7 +46,7 @@ before a class, and mark the CPS functions in that class as `@:cps`:
         haxe.Timer.delay(handler, 1000);
       }
     
-      // Because of the magic @:cps, this function will be transform to:
+      // Because of the magic @:cps, this function will be transformed to:
       // static function asyncTest(__return:Void->Void):Void
       @:cps static function asyncTest():Void
       {
