@@ -118,7 +118,7 @@ The example forks 5 threads, and calls Node.js's asynchronous functions in each 
 
 ### Generator
 
-haxe-continuation also provider an utility to wrap CPS functions into `Iterator`s.
+haxe-continuation also provides an utility to wrap CPS functions into `Iterator`s.
 
 For example:
 
