@@ -83,7 +83,7 @@ class TestForkJoin
 
   public static function main()
   {
-    startManagerThreads(function() { trace("All tests is done."); } );
+    startManagerThreads(function() { trace("All tests are done."); } );
     trace("All threads are started.");
   }
 
