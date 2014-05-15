@@ -232,7 +232,7 @@ class TestContinuation
 
     Continuation.cpsFunction(function functionOfFunction():(Int->Void)->Void
     {
-      return function():Int { return 1; }.cpsFunction();
+      return Continuation.cpsFunction(function():Int { return 1; } );
     });
 
     Continuation.cpsFunction(function myFunction():Int
@@ -240,7 +240,6 @@ class TestContinuation
       var ff = functionOfFunction().async();
       trace(ff);
       return ff().async();
-      //return f().async();
     });
     Continuation.cpsFunction(function multiVar()
     {
