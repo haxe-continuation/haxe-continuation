@@ -4,15 +4,15 @@ haxe-continuation
 An *asynchronous functions* is a function that accept its last parameter 
 as a callback function.
 And **haxe-continuation** is a macro library enables you to invoke and write
-asynchronous functions like a synchronization function, and automatically
-transform the function into *continuation-passing style (CPS)*. That means
+asynchronous functions like synchronization functions, and automatically
+transform these functions into *continuation-passing style (CPS)*. That means
 you can write code looks like *multithreading* without platform
 multithreading support.
 
 ## Installation
 
-I have upload haxe-continuation to haxelib. To install, type the following
-command in shell:
+I have uploaded haxe-continuation on [haxelib](http://lib.haxe.org/p/continuation).
+To install, type the following command in shell:
 
     haxelib install continuation
 
@@ -33,20 +33,20 @@ haxe-continuation requires Haxe 2.10 or Haxe 3.
 ## Usage
 
 To write a CPS function, put `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))`
-before a class, and marking the CPS functions in that class as `@:cps`:
+before a class, and mark the CPS functions in that class as `@:cps`:
 
     import com.dongxiguo.continuation.Continuation;
     @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
     class Sample
     {
     
-      // An asynchronous function without automatically CPS transformation.
+      // An asynchronous function without automatical CPS transformation.
       static function sleepOneSecond(handler:Void->Void):Void
       {
         haxe.Timer.delay(handler, 1000);
       }
     
-      // Because of the magic @:cps, this function will be transform to:
+      // Because of the magic @:cps, this function will be transformed to:
       // static function asyncTest(__return:Void->Void):Void
       @:cps static function asyncTest():Void
       {
@@ -118,7 +118,7 @@ The example forks 5 threads, and calls Node.js's asynchronous functions in each 
 
 ### Generator
 
-haxe-continuation also provider an utility to wrap CPS functions into `Iterator`s.
+haxe-continuation also provides an utility to wrap CPS functions into `Iterator`s.
 
 For example:
 

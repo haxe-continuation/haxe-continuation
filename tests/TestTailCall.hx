@@ -28,63 +28,29 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 package tests;
-import haxe.Timer;
 
-using com.dongxiguo.continuation.utils.ForkJoin;
-
-/**
- * @author 杨博
- */
 @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
-class TestForkJoin
+class TestTailCall
 {
-  static function sleep(time_ms:Int, handler:Void->Void):Void
-  {
-    Timer.delay(handler, time_ms);
-  }
 
-  /** Start 4 worker threads. Every worker is a collector. */
-  @:cps public static function startWorkerThreads(parentId:Int, childrenIds:Array<Int>):Array<Int>
+  @:cps
+  static function loop0()
   {
-    trace("Before fork");
-    var threadId, collect = ForkJoin.startCollectors(childrenIds).async();
-    var result = collect(
+    var c = 0;
+    for (i in 0...0x7FF)
     {
-      trace("Start sub-thread #" + parentId + "." + threadId);
-
-      trace("Sub-thread #" + parentId + "." + threadId + " is going to sleep.");
-      sleep(Std.int(Math.random() * 5000.0)).async();
-      trace("Sub-thread #" + parentId + "." + threadId + " is waken up.");
-
-      trace("Collecting data from sub-thread #" + parentId + "." + threadId + "...");
-
-      threadId * parentId;
-    }).async();
-    trace("All sub-threads of #" + parentId + " are joined.");
-    return result;
-  }
-
-  /** Start 4 manager threads. Every manager manages 6 workers. */
-  @:cps public static function startManagerThreads():Void
-  {
-    var threadIds = [ 0, 1, 2, 3 ];
-    trace("Before fork");
-    {
-      var threadId, join = ForkJoin.startThreads(threadIds).async();
-      trace("Start thread #" + threadId);
-
-      trace("Data from sub-threads of #" + threadId + ": " + Std.string(startWorkerThreads(threadId, [0, 1, 2, 3, 4, 5]).async()));
-
-      trace("Joining thread #" + threadId + "...");
-      join().async();
+      c += i;
+      var a = 2;
+      c += a;
+      var b = 1;
+      c -= b;
     }
-    trace("All threads are joined.");
+    return c;
   }
 
   public static function main()
   {
-    startManagerThreads(function() { trace("All tests are done."); } );
-    trace("All threads are started.");
+    loop0(function(c) trace(c));
   }
 
 }

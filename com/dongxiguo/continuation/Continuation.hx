@@ -299,7 +299,7 @@ class ContinuationDetail
           expr: EConst(CIdent(continueName))
         };
         var breakName = "__break_" + seed++;
-        #if no-inline
+        #if no_inline
           var inlineBreakName = breakName;
         #else
           var inlineBreakName = "inline_" + breakName;
@@ -344,13 +344,13 @@ class ContinuationDetail
             }
             function $continueName():Void
             {
-              #if no-inline #else inline #end function __do()
+              #if no_inline #else inline #end function __do()
               {
-                #if no-inline #else inline #end function __break()
+                #if no_inline #else inline #end function __break()
                 {
                   $breakIdent();
                 }
-                #if no-inline #else inline #end function __continue()
+                #if no_inline #else inline #end function __continue()
                 {
                   $continueIdent();
                 }
@@ -363,7 +363,7 @@ class ContinuationDetail
         }
         else
         {
-          #if no-inline
+          #if no_inline
             var inlineContinueName = continueName;
           #else
             var inlineContinueName = "inline_" + continueName;
@@ -380,11 +380,11 @@ class ContinuationDetail
               {
                 $continueBody;
               }
-              #if no-inline #else inline #end function __break()
+              #if no_inline #else inline #end function __break()
               {
                 $breakIdent();
               }
-              #if no-inline #else inline #end function __continue()
+              #if no_inline #else inline #end function __continue()
               {
                 $continueIdent();
               }
@@ -508,7 +508,25 @@ class ContinuationDetail
                     expr:
                     {
                       pos: origin.pos,
-                      expr: EReturn(rest([])),
+                      expr: EBlock(
+                        {
+                          var exprs = [];
+                          // Workaround for https://github.com/HaxeFoundation/haxe/issues/2069
+                          for (originVar in originVars)
+                          {
+                            exprs.push(
+                              {
+                                pos: origin.pos,
+                                expr: EConst(CIdent(originVar.name)),
+                              });
+                          }
+                          exprs.push(rest([]));
+                            //{
+                              //pos: origin.pos,
+                              //expr: EReturn(rest([])),
+                            //});
+                          exprs;
+                        }),
                     }
                   }),
               },
@@ -987,7 +1005,7 @@ class ContinuationDetail
             var getIteratorExpr = macro
             {
               var __tempIterator = null;
-              #if no-inline #else inline #end function setIterator<T>(
+              #if no_inline #else inline #end function setIterator<T>(
                 ?iterable:Iterable<T> = null,
                 ?iterator:Iterator<T> = null):Void
               {
@@ -1294,7 +1312,16 @@ class ContinuationDetail
       }
       case EBreak:
       {
-        return macro __break();
+        return
+        {
+          pos: origin.pos,
+          expr: ECall(
+            {
+              pos: origin.pos,
+              expr: EConst(CIdent("__break")),
+            },
+            [])
+        };
       }
       case EBlock(exprs):
       {
@@ -1592,7 +1619,7 @@ private class Wrapper
       }
       case IGNORE:
         var functionName = "__wrapper_" + Std.string(seed++);
-        #if no-inline
+        #if no_inline
           this.declearation = declearWrapper(functionName, 0, rest);
         #else
           this.declearation = declearWrapper("inline_" + functionName, 0, rest);
@@ -1618,7 +1645,7 @@ private class Wrapper
         };
       case EXACT(numParameters):
         var functionName = "__wrapper_" + Std.string(seed++);
-        #if no-inline
+        #if no_inline
           this.declearation = declearWrapper(functionName, numParameters, rest);
         #else
           this.declearation = declearWrapper("inline_" + functionName, numParameters, rest);

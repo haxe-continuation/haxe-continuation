@@ -1,0 +1,7 @@
+-cp .
+-swf bin/TestTailCall.swf
+-swf-header 0:0:0:FFFFFF
+--flash-strict
+-swf-version 11
+-main tests.TestTailCall
+--no-inline
