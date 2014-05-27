@@ -53,7 +53,14 @@ class Continuation
 
     In wrapped function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
    **/
-  #if haxe3 @:noUsing macro #else @:macro #end
+  #if haxe3
+    #if (haxe_ver >= 3.1)
+      @:noUsing
+    #end
+    macro
+  #else
+    @:macro
+  #end
   public static function cpsFunction(expr:Expr):Expr
   {
     switch (expr.expr)
