@@ -205,9 +205,9 @@ class Continuation
 
 /**
   For internal use only. Don't access it immediately.
-  @private
 **/
 @:final
+@:dox(hide)
 class ContinuationDetail
 {
   #if macro
