@@ -46,7 +46,7 @@ before a class, and mark the CPS functions in that class as `@:cps`:
         haxe.Timer.delay(handler, 1000);
       }
     
-      // Because of the magic @:cps, this function will be transformed to:
+      // The magic @:cps transforms this function to:
       // static function asyncTest(__return:Void->Void):Void
       @:cps static function asyncTest():Void
       {
@@ -168,6 +168,11 @@ The output:
     TestGenerator.hx:47: 3 * 3 =
     TestGenerator.hx:59: 9
     TestGenerator.hx:49: -------
+
+## Links
+
+ * [haxe-continuation API documentation](http://atry.github.io/haxe-continuation/dox/com/dongxiguo/continuation/)
+ * [Test cases and examples](https://github.com/Atry/haxe-continuation/tree/haxe-3/tests)
 
 ## License
 
