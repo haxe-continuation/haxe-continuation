@@ -1,7 +1,6 @@
 all release.zip: \
 haxelib.json \
 haxelib.xml \
-haxedoc.xml \
 LICENSE \
 $(wildcard com/dongxiguo/continuation/*.hx com/dongxiguo/continuation/*/*.hx)
 
