@@ -45,13 +45,20 @@ class EventSelector
     {
       for (condition in conditionCandidates)
       {
-        self.removeEventListener(condition.type, underlyingHandler, condition.useCapture);
+        self.removeEventListener(
+          condition.type,
+          underlyingHandler,
+          condition.useCapture);
       }
       handler(event);
     }
     for (condition in conditionCandidates)
     {
-      self.addEventListener(condition.type, underlyingHandler, condition.useCapture, condition.priority);
+      self.addEventListener(
+        condition.type,
+        underlyingHandler,
+        condition.useCapture,
+        condition.priority);
     }
   }
 }

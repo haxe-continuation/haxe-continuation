@@ -49,9 +49,10 @@ using Lambda;
 class Continuation
 {
   /**
-    Wrap a function to CPS function.
+    Wrap a function to a CPS function.
 
-    In wrapped function, you can use `.async()` suffix to invoke other asynchronous functions.
+    In the wrapped function, you can use `.async()` suffix to invoke other
+    asynchronous functions.
    **/
   #if haxe3
     #if (haxe_ver >= 3.1)
@@ -127,10 +128,16 @@ class Continuation
   }
 
   /**
-    A [build macro](http://haxe.org/manual/macro-type-building.html) that enable CPS transformation for the annotated class.
+    A [build macro](http://haxe.org/manual/macro-type-building.html) that
+    enables CPS transformation for the annotated class.
 
-    In `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("youMeta")) class YourClass`, all `@youMeta` methods in `YourClass` will be transfromed to CPS functions.
-    In these `@youMeta` methods, some macros are performed to enable the magic `.async()` suffix syntax to invoke other asynchronous functions.
+    In
+    `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("youMeta"))
+    class YourClass`,
+    all `@youMeta` methods in `YourClass` will be transfromed to CPS functions.
+    In these `@youMeta` methods,
+    some macros are performed to enable the magic `.async()` suffix syntax that
+    invokes other asynchronous functions.
   **/
   @:noUsing
   #if haxe3 macro #else @:macro #end
@@ -213,7 +220,9 @@ class ContinuationDetail
 {
   #if macro
 
-  static function pushMulti(gc:GenericCell<Expr>, a:Array<Expr>):GenericCell<Expr>
+  static function pushMulti(
+    gc:GenericCell<Expr>,
+    a:Array<Expr>):GenericCell<Expr>
   {
     for (e in a)
     {

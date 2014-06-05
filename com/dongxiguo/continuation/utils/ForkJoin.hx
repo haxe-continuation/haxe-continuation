@@ -151,8 +151,14 @@ class ForkJoin
 
 }
 
-/** The function should be invoke when the thread exit. The execution continues only if all child threads have invoked their `JoinFunction`. */
+/**
+  The function should be invoke when the thread exit. The execution continues
+  only if all child threads have invoked their `JoinFunction`.
+**/
 typedef JoinFunction = (Void->Void)->Void;
 
-/** Like `JoinFunction`, but will collect all results from each child threads into an array. */
+/**
+  Like `JoinFunction`,
+  but will collect all results from each child threads into an array.
+**/
 typedef CollectFunction<Result> = Result->(Array<Result>->Void)->Void;
