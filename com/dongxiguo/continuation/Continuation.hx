@@ -252,7 +252,7 @@ class ContinuationDetail
     parameterRequirement:ParameterRequirement,
     rest:Array<Expr>->Expr):Expr
   {
-    var wrapper = new Wrapper(parameterRequirement, rest);
+    var wrapper = new Wrapper(parameterRequirement, rest, false);
     return transformNoDelay(
       econd,
       EXACT(1),
@@ -1611,7 +1611,9 @@ private class Wrapper
 
   public function new(
     parameterRequirement:ParameterRequirement,
-    rest:Array<Expr>->Expr)
+    rest:Array<Expr>->Expr,
+    // 如果不指定isInline，默认值由no_inline预定义变量决定是否内联
+    isInline:Bool = #if no_inline false #else true #end)
   {
     switch (parameterRequirement)
     {
@@ -1626,11 +1628,14 @@ private class Wrapper
       }
       case IGNORE:
         var functionName = "__wrapper_" + Std.string(seed++);
-        #if no_inline
-          this.declearation = declearWrapper(functionName, 0, rest);
-        #else
+        if (isInline)
+        {
           this.declearation = declearWrapper("inline_" + functionName, 0, rest);
-        #end
+        }
+        else
+        {
+          this.declearation = declearWrapper(functionName, 0, rest);
+        }
         this.invocation = function(parameters:Array<Expr>):Expr
         {
           return
