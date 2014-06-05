@@ -171,7 +171,7 @@ The output:
 
 ## Links
 
- * [Haxe Continuation API Documentation](http://atry.github.io/haxe-continuation/dox/com/dongxiguo/continuation/)
+ * [haxe-continuation API documentation](http://atry.github.io/haxe-continuation/dox/com/dongxiguo/continuation/)
  * [Test cases and examples](https://github.com/Atry/haxe-continuation/tree/haxe-3/tests)
 
 ## License
