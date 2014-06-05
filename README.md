@@ -169,6 +169,11 @@ The output:
     TestGenerator.hx:59: 9
     TestGenerator.hx:49: -------
 
+## Links
+
+ * [Haxe Continuation API Documentation](http://atry.github.io/haxe-continuation/dox/com/dongxiguo/continuation/)
+ * [Test cases and examples](https://github.com/Atry/haxe-continuation/tree/haxe-3/tests)
+
 ## License
 
 Copyright (c) 2012, 杨博 (Yang Bo)
