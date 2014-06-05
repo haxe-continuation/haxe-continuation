@@ -1,0 +1,8 @@
+/cross-platform.xml
+/release.zip
+/bin
+*.swn
+*.swo
+*.swp
+.*
+/haxelib.json
