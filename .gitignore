@@ -1,9 +1,9 @@
-haxedoc.xml
-release.zip
-bin
+/cross-platform.xml
+/release.zip
+/bin
 *.swn
 *.swo
 *.swp
 .*
-
+/dox
 /haxelib.json

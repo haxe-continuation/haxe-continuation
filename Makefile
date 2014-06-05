@@ -99,10 +99,16 @@ tests/Sample.hx \
 | bin
 	haxe -js $@ -main tests.Sample
 
+dox: cross-platform.xml
+	haxelib run dox \
+	--input-path $< \
+	--output-path $@ \
+	--include '^com(\.dongxiguo(\.continuation(\..*)?)?)?$$'
+	touch $@
 
-haxedoc.xml: \
+cross-platform.xml: \
 $(wildcard com/dongxiguo/continuation/*.hx com/dongxiguo/continuation/*/*.hx)
-	haxe -xml $@ $^
+	haxe -D doc-gen -xml $@ $^
 
 bin:
 	mkdir $@

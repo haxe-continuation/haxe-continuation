@@ -51,7 +51,7 @@ class Continuation
   /**
     Wrap a function to CPS function.
 
-    In wrapped function, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
+    In wrapped function, you can use `.async()` suffix to invoke other asynchronous functions.
    **/
   #if haxe3
     #if (haxe_ver >= 3.1)
@@ -127,9 +127,10 @@ class Continuation
   }
 
   /**
-    When you add <code>@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("metaName"))</code> in front of a class, any method with same metadata name from <code>metaName</code> in that class will be transfromed to CPS function.
+    A [build macro](http://haxe.org/manual/macro-type-building.html) that enable CPS transformation for the annotated class.
 
-    In these methods, you can use <code>.async()</code> postfix to invoke other asynchronous functions.
+    In `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("youMeta")) class YourClass`, all `@youMeta` methods in `YourClass` will be transfromed to CPS functions.
+    In these `@youMeta` methods, some macros are performed to enable the magic `.async()` suffix syntax to invoke other asynchronous functions.
   **/
   @:noUsing
   #if haxe3 macro #else @:macro #end

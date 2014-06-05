@@ -30,7 +30,7 @@
 package com.dongxiguo.continuation.utils;
 
 /**
-  An Iterator that contains yield result.
+  An `Iterator<Element>` that yields each element lazily.
 **/
 @:final
 class Generator<Element>
@@ -139,16 +139,16 @@ class Generator<Element>
     }
   }
   
-  public static function iterator<Element>(self:RunFunction<Element>):Generator<Element>
+  public static function iterator<Element>(runFunction:RunFunction<Element>):Generator<Element>
   {
-    return new Generator(self);
+    return new Generator(runFunction);
   }
   
-  public static function toIterable<Element>(self:RunFunction<Element>):Iterable<Element>
+  public static function toIterable<Element>(runFunction:RunFunction<Element>):Iterable<Element>
   {
     return
     {
-      iterator: function() { return new Generator(self); },
+      iterator: function() { return new Generator(runFunction); },
     }
   }
 }

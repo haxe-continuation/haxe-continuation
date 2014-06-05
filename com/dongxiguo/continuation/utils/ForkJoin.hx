@@ -35,7 +35,11 @@ package com.dongxiguo.continuation.utils;
 @:final
 class ForkJoin
 {
-  /** Usage: <code>return ForkJoin.hang().async();</code> */
+  /**
+    Hangs up the current thread.
+
+    Usage: `return ForkJoin.hang().async();`
+  **/
   @:noUsing
   @:extern
   public static inline function hang(handler:Dynamic):Void
@@ -51,7 +55,7 @@ class ForkJoin
   }
 
   /**
-    Like <code>fork</code>, but returns a <code>CollectFunction</code> instead of <code>JoinFunction</code>.
+    Like `ForkJoin.fork`, but returns a `CollectFunction` instead of `JoinFunction`.
    **/
   @:noUsing
   public static function startCollectors<Identifier, Result>(
@@ -99,10 +103,10 @@ class ForkJoin
   }
 
   /**
-    Fork threads for every element in <code>threadIdentifiers</code>.
-    @param handler The callback function invoked for each element in <code>threadIdentifiers</code>.
-    The <code>handler</code> can receive two parameters:
-    the element in <code>threadIdentifiers</code> and the <code>JoinFunction</code>.
+    Forks threads for every element in `threadIdentifiers`.
+    @param handler The callback function invoked for each element in `threadIdentifiers`.
+    The `handler` can receive two parameters:
+    the element in `threadIdentifiers` and the `JoinFunction`.
    **/
   @:noUsing
   public static function startThreads<Identifier>(
@@ -147,8 +151,8 @@ class ForkJoin
 
 }
 
-/** The function should be invoke when the thread exit. The execution only continues if all child threads have invoked their `JoinFunction`. */
+/** The function should be invoke when the thread exit. The execution continues only if all child threads have invoked their `JoinFunction`. */
 typedef JoinFunction = (Void->Void)->Void;
 
-/** Like <code>JoinFunction</code>, but will collect all results from each child threads into an array. */
+/** Like `JoinFunction`, but will collect all results from each child threads into an array. */
 typedef CollectFunction<Result> = Result->(Array<Result>->Void)->Void;
