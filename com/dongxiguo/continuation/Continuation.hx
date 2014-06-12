@@ -1,4 +1,4 @@
-// Copyright (c) 2012, 杨博 (Yang Bo)
+// Copyright (c) 2012-2014, 杨博 (Yang Bo)
 // All rights reserved.
 //
 // Author: 杨博 (Yang Bo) <pop.atry@gmail.com>
@@ -42,9 +42,6 @@ typedef GenericCell<T> = FastCell<T>;
 #end
 using Lambda;
 
-/**
-  @author 杨博 <pop.atry@gmail.com>
-**/
 @:final
 class Continuation
 {

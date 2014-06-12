@@ -1,4 +1,4 @@
-// Copyright (c) 2013, 杨博 (Yang Bo)
+// Copyright (c) 2013-2014, 杨博 (Yang Bo)
 // All rights reserved.
 //
 // Author: 杨博 (Yang Bo) <pop.atry@gmail.com>
@@ -29,9 +29,6 @@
 
 package com.dongxiguo.continuation.utils;
 
-/**
- * @author 杨博
- */
 @:final
 class ForkJoin
 {
@@ -46,6 +43,19 @@ class ForkJoin
   {
   }
 
+  /**
+    Forks the current thread.
+
+    Usage:
+    <pre>`if (ForkJoin.fork().async())
+    {
+      // Forked thread #1
+    }
+    else
+    {
+      // Forked thread #2
+    }`</pre>
+  **/
   @:noUsing
   @:extern
   public static inline function fork(handler:Bool->Void):Void
@@ -55,7 +65,7 @@ class ForkJoin
   }
 
   /**
-    Like `ForkJoin.fork`, but returns a `CollectFunction` instead of `JoinFunction`.
+    Like `ForkJoin.startThreads`, but returns a `CollectFunction` instead of `JoinFunction`.
    **/
   @:noUsing
   public static function startCollectors<Identifier, Result>(
