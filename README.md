@@ -108,12 +108,12 @@ Another way is using `Continuation.cpsFunction` macro to write nested CPS functi
     }
 
 
-See https://github.com/Atry/haxe-continuation/blob/master/tests/TestContinuation.hx
+See https://github.com/Atry/haxe-continuation/blob/haxe-3/tests/TestContinuation.hx
 for more examples.
 
 ### Working with [hx-node](https://github.com/cloudshift/hx-node)
 
-Look at https://github.com/Atry/haxe-continuation/blob/master/tests/TestNode.hx.
+Look at https://github.com/Atry/haxe-continuation/blob/haxe-3/tests/TestNode.hx.
 The example forks 5 threads, and calls Node.js's asynchronous functions in each thread.
 
 ### Generator
