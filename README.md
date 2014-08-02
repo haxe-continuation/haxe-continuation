@@ -28,7 +28,7 @@ Output to JavaScript:
 
 , or output to any other platform that Haxe supports.
 
-haxe-continuation requires Haxe 2.10 or Haxe 3.
+haxe-continuation is tested with Haxe 3.1.3.
 
 ## Usage
 
