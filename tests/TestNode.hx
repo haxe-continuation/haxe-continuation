@@ -1,11 +1,11 @@
 // Copyright (c) 2013, 杨博 (Yang Bo)
 // All rights reserved.
-// 
+//
 // Author: 杨博 (Yang Bo) <pop.atry@gmail.com>
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 // * Redistributions of source code must retain the above copyright notice,
 //   this list of conditions and the following disclaimer.
 // * Redistributions in binary form must reproduce the above copyright notice,
@@ -14,7 +14,7 @@
 // * Neither the name of the <ORGANIZATION> nor the names of its contributors
 //   may be used to endorse or promote products derived from this software
 //   without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -35,7 +35,7 @@ using Lambda;
  * @author 杨博
  */
 @:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
-class TestNode 
+class TestNode
 {
   /**
    * Writes <code>content</code> to <code>fd</code>.
@@ -57,7 +57,7 @@ class TestNode
     }
     return null;
   }
-  
+
   /**
    * Creates a directory named "TestNode", and concurrently put 5 files into it.
    */
@@ -69,11 +69,11 @@ class TestNode
       trace("Node.fs.mkdir failed: " + err);
       return;
     }
-    
+
     // Lambda.iter() forks threads for each element.
     // Fork 5 threads now!
-    var fileName = ["1.txt", "2.log", "3.txt", "4.ini", "5.conf"].iter().async();
-    
+    var fileName = @await ["1.txt", "2.log", "3.txt", "4.ini", "5.conf"].iter();
+
     // Note that some asynchronous functions return more than one values!
     // It's OK in CPS functions, just like Lua.
     var err, fd = @await Node.fs.open("TestNode/" + fileName, "w+");
@@ -82,7 +82,7 @@ class TestNode
       trace("Node.fs.open failed: " + err);
       return;
     }
-    
+
     // Invoke another CPS function.
     var err = @await writeAll(fd, "Content of " + fileName);
     if (err != null)
@@ -90,7 +90,7 @@ class TestNode
       trace("Node.fs.write failed: " + err);
       return;
     }
-    
+
     var err = @await Node.fs.close(fd);
     if (err != null)
     {
@@ -107,5 +107,5 @@ class TestNode
         trace("Test is done!");
       });
   }
-  
+
 }

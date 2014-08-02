@@ -48,18 +48,18 @@ class TestForkJoin
   {
     trace("Before fork");
     var threadId, collect = @await ForkJoin.startCollectors(childrenIds);
-    var result = collect(
+    var result = @await collect(
     {
       trace("Start sub-thread #" + parentId + "." + threadId);
 
       trace("Sub-thread #" + parentId + "." + threadId + " is going to sleep.");
-      sleep(Std.int(Math.random() * 5000.0)).async();
+      @await sleep(Std.int(Math.random() * 5000.0));
       trace("Sub-thread #" + parentId + "." + threadId + " is waken up.");
 
       trace("Collecting data from sub-thread #" + parentId + "." + threadId + "...");
 
       threadId * parentId;
-    }).async();
+    });
     trace("All sub-threads of #" + parentId + " are joined.");
     return result;
   }
