@@ -118,7 +118,6 @@ class Continuation
       }
       default:
       {
-        trace(expr.expr);
         throw "Expect function.";
       }
     }
