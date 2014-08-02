@@ -53,8 +53,8 @@ before a class, and mark the CPS functions in that class as `@:cps`:
         trace("Start continuation.");
         for (i in 0...10)
         {
-          // Magic .async() postfix to invoke an asynchronous function.
-          sleepOneSecond().async();
+          // Magic @await prefix to invoke an asynchronous function.
+          @await sleepOneSecond();
           trace("Run sleepOneSecond " + i + " times.");
         }
         trace("Continuation is done.");
@@ -71,8 +71,8 @@ before a class, and mark the CPS functions in that class as `@:cps`:
     }
 
 In CPS functions, `async` is a magic word to invoke other
-async functions. When calling an asynchronous function with the `.async()` postfix, you need not to explicitly pass a callback
-function. Instead, the code after `.async()` will be captured as the callback
+async functions. When calling an asynchronous function with the `@await` prefix, you need not to explicitly pass a callback
+function. Instead, the code after `@await` will be captured as the callback
 function for the callee.
 
 Another way is using `Continuation.cpsFunction` macro to write nested CPS functions:
@@ -94,8 +94,8 @@ Another way is using `Continuation.cpsFunction` macro to write nested CPS functi
           trace("Start continuation.");
           for (i in 0...10)
           {
-            // Magic .async() postfix to invoke an asynchronous function.
-            sleepOneSecond().async();
+            // Magic @await prefix to invoke an asynchronous function.
+            @await sleepOneSecond();
             trace("Run sleepOneSecond " + i + " times.");
           }
           trace("Continuation is done.");
@@ -134,7 +134,7 @@ For example:
           for (j in 1...(i+1))
           {
             trace('$j * $i =');
-            yield(i * j).async();
+            @await yield(i * j);
             trace("-------");
           }
         }
