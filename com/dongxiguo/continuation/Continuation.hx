@@ -250,6 +250,165 @@ class ContinuationDetail
     return exprs[0];
   }
 
+  static function transformAwait(e:Expr, originParams:Array<Expr>, rest:Array<Expr>->Expr):Expr
+  {
+    function transformNext(i:Int, transformedParameters:Null<GenericCell<Expr>>):Expr
+    {
+      if (i == originParams.length)
+      {
+        return transformNoDelay(e, ANY, function(functionResult)
+        {
+          var transformedCalleeExpr = unpack(functionResult, e.pos);
+          var typingExpr = switch (transformedCalleeExpr.expr)
+          {
+            case EField(e, fieldName):
+            {
+              switch (e.expr)
+              {
+                case EConst(c):
+                {
+                  switch (c)
+                  {
+                    case CIdent(s):
+                    {
+                      if (s == "super")
+                      {
+                        {
+                          pos: transformedCalleeExpr.pos,
+                          expr: EField(macro this, fieldName),
+                        }
+                      }
+                      else
+                      {
+                        transformedCalleeExpr;
+                      }
+                    }
+                    default: transformedCalleeExpr;
+                  }
+                }
+                default: transformedCalleeExpr;
+              }
+            }
+            default: transformedCalleeExpr;
+          }
+          var handlerArgResult = [];
+          var handlerArgDefs = [];
+          var functionType = try
+          {
+            Context.follow(Context.typeof(typingExpr));
+          }
+          catch (_:Dynamic)
+          {
+            null;
+          }
+          if (functionType == null)
+          {
+            var name = "__parameter_" + seed++;
+            handlerArgResult.push(
+              {
+                pos: e.pos,
+                expr: EConst(CIdent(name))
+              });
+            handlerArgDefs.push(
+              {
+                opt: true,
+                name: name,
+                type: null,
+                value: null
+              });
+          }
+          else
+          {
+            switch (functionType)
+            {
+              case TFun(args, _):
+              {
+                switch (args[args.length - 1].t)
+                {
+                  case TFun(args, _):
+                  {
+                    for (handlerArg in args)
+                    {
+                      var name = "__parameter_" + seed++;
+                      handlerArgResult.push(
+                        {
+                          pos: e.pos,
+                          expr: EConst(CIdent(name))
+                        });
+                      handlerArgDefs.push(
+                        {
+                          opt: handlerArg.opt,
+                          name: name,
+                          #if (haxe3 || haxe_211)
+                          type: haxe.macro.TypeTools.toComplexType(handlerArg.t),
+                          #else
+                          type: null,
+                          #end
+                          value: null
+                        });
+                    }
+                  }
+                  default:
+                  {
+                    var name = "__parameter_" + seed++;
+                    handlerArgResult.push(
+                      {
+                        pos: e.pos,
+                        expr: EConst(CIdent(name))
+                      });
+                    handlerArgDefs.push(
+                      {
+                        opt: true,
+                        name: name,
+                        type: null,
+                        value: null
+                      });
+                  }
+                }
+              }
+              default:
+              {
+                return Context.error("Expect function.", e.pos);
+              }
+            }
+          }
+          var a = toReverseArray(transformedParameters);
+          a.push(
+            {
+              pos: e.pos,
+              expr: EFunction(null,
+              {
+                ret: null,
+                params: [],
+                expr: rest(handlerArgResult),
+                args: handlerArgDefs
+              })
+            });
+          return
+          {
+            pos: e.pos,
+            expr: ECall(transformedCalleeExpr, a),
+          };
+        });
+      }
+      else
+      {
+        return transformNoDelay(
+          originParams[i],
+          ANY,
+          function(parameterResult:Array<Expr>):Expr
+          {
+            return transformNext(
+              i + 1,
+              pushMulti(
+                transformedParameters,
+                parameterResult));
+          });
+      }
+    }
+    return transformNext(0, null);
+  }
+
   static function transformCondition(
     pos:Position,
     econd:Expr,
@@ -298,9 +457,26 @@ class ContinuationDetail
     switch (origin.expr)
     {
       #if (haxe_211 || haxe3)
-      case EMeta(_, _):
+      case EMeta(s, e):
       {
-        return rest([origin]);
+        switch (e.expr)
+        {
+          case ECall(functionExpr, params):
+          {
+            if (s.name == "await" && s.params.empty())
+            {
+              return transformAwait(functionExpr, params, rest);
+            }
+            else
+            {
+              return rest([origin]);
+            }
+          }
+          default:
+          {
+            return rest([origin]);
+          }
+        }
       }
       #end
       case EWhile(econd, e, normalWhile):
@@ -1112,11 +1288,11 @@ class ContinuationDetail
               ]);
           });
       }
-      case ECall(e, originParams):
+      case ECall(callExpr, originParams):
       {
         if (originParams.length == 0)
         {
-          switch (e.expr)
+          switch (callExpr.expr)
           {
             case EField(prefixCall, field):
             {
@@ -1126,161 +1302,8 @@ class ContinuationDetail
                 {
                   case ECall(e, originParams):
                   {
-                    function transformNext(i:Int, transformedParameters:Null<GenericCell<Expr>>):Expr
-                    {
-                      if (i == originParams.length)
-                      {
-                        return transformNoDelay(e, ANY, function(functionResult)
-                        {
-                          var transformedCalleeExpr = unpack(functionResult, e.pos);
-                          var typingExpr = switch (transformedCalleeExpr.expr)
-                          {
-                            case EField(e, fieldName):
-                            {
-                              switch (e.expr)
-                              {
-                                case EConst(c):
-                                {
-                                  switch (c)
-                                  {
-                                    case CIdent(s):
-                                    {
-                                      if (s == "super")
-                                      {
-                                        {
-                                          pos: transformedCalleeExpr.pos,
-                                          expr: EField(macro this, fieldName),
-                                        }
-                                      }
-                                      else
-                                      {
-                                        transformedCalleeExpr;
-                                      }
-                                    }
-                                    default: transformedCalleeExpr;
-                                  }
-                                }
-                                default: transformedCalleeExpr;
-                              }
-                            }
-                            default: transformedCalleeExpr;
-                          }
-                          var handlerArgResult = [];
-                          var handlerArgDefs = [];
-                          var functionType = try
-                          {
-                            Context.follow(Context.typeof(typingExpr));
-                          }
-                          catch (_:Dynamic)
-                          {
-                            null;
-                          }
-                          if (functionType == null)
-                          {
-                            var name = "__parameter_" + seed++;
-                            handlerArgResult.push(
-                              {
-                                pos: origin.pos,
-                                expr: EConst(CIdent(name))
-                              });
-                            handlerArgDefs.push(
-                              {
-                                opt: true,
-                                name: name,
-                                type: null,
-                                value: null
-                              });
-                          }
-                          else
-                          {
-                            switch (functionType)
-                            {
-                              case TFun(args, _):
-                              {
-                                switch (args[args.length - 1].t)
-                                {
-                                  case TFun(args, _):
-                                  {
-                                    for (handlerArg in args)
-                                    {
-                                      var name = "__parameter_" + seed++;
-                                      handlerArgResult.push(
-                                        {
-                                          pos: origin.pos,
-                                          expr: EConst(CIdent(name))
-                                        });
-                                      handlerArgDefs.push(
-                                        {
-                                          opt: handlerArg.opt,
-                                          name: name,
-                                          #if (haxe3 || haxe_211)
-                                          type: haxe.macro.TypeTools.toComplexType(handlerArg.t),
-                                          #else
-                                          type: null,
-                                          #end
-                                          value: null
-                                        });
-                                    }
-                                  }
-                                  default:
-                                  {
-                                    var name = "__parameter_" + seed++;
-                                    handlerArgResult.push(
-                                      {
-                                        pos: origin.pos,
-                                        expr: EConst(CIdent(name))
-                                      });
-                                    handlerArgDefs.push(
-                                      {
-                                        opt: true,
-                                        name: name,
-                                        type: null,
-                                        value: null
-                                      });
-                                  }
-                                }
-                              }
-                              default:
-                              {
-                                return Context.error("Expect function.", e.pos);
-                              }
-                            }
-                          }
-                          var a = toReverseArray(transformedParameters);
-                          a.push(
-                            {
-                              pos: origin.pos,
-                              expr: EFunction(null,
-                              {
-                                ret: null,
-                                params: [],
-                                expr: rest(handlerArgResult),
-                                args: handlerArgDefs
-                              })
-                            });
-                          return
-                          {
-                            pos: origin.pos,
-                            expr: ECall(transformedCalleeExpr, a),
-                          };
-                        });
-                      }
-                      else
-                      {
-                        return transformNoDelay(
-                          originParams[i],
-                          ANY,
-                          function(parameterResult:Array<Expr>):Expr
-                          {
-                            return transformNext(
-                              i + 1,
-                              pushMulti(
-                                transformedParameters,
-                                parameterResult));
-                          });
-                      }
-                    }
-                    return transformNext(0, null);
+                    Context.warning("`.async()` is deprecated. Please use `@await` instead.", origin.pos);
+                    return transformAwait(e, originParams, rest);
                   }
                   default:
                 }
@@ -1293,7 +1316,7 @@ class ContinuationDetail
         {
           if (i == originParams.length)
           {
-            return transformNoDelay(e, EXACT(1), function(functionResult)
+            return transformNoDelay(callExpr, EXACT(1), function(functionResult)
             {
               var handlerArgResult = [];
               var handlerArgDefs = [];
