@@ -32,11 +32,11 @@ haxe-continuation is tested with Haxe 3.1.3.
 
 ## Usage
 
-To write a CPS function, put `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))`
-before a class, and mark the CPS functions in that class as `@:cps`:
+To write a CPS function, put `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))`
+before a class, and mark the CPS functions in that class as `@:async`:
 
     import com.dongxiguo.continuation.Continuation;
-    @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
+    @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
     class Sample
     {
     
@@ -46,9 +46,9 @@ before a class, and mark the CPS functions in that class as `@:cps`:
         haxe.Timer.delay(handler, 1000);
       }
     
-      // The magic @:cps transforms this function to:
+      // The magic @:async transforms this function to:
       // static function asyncTest(__return:Void->Void):Void
-      @:cps static function asyncTest():Void
+      @:async static function asyncTest():Void
       {
         trace("Start continuation.");
         for (i in 0...10)
@@ -123,10 +123,10 @@ haxe-continuation also provides an utility to wrap CPS functions into `Iterator`
 For example:
 
     using com.dongxiguo.continuation.utils.Generator;
-    @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
+    @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
     class TestGenerator
     {
-      @:cps
+      @:async
       static function intGenerator(yield:YieldFunction<Int>):Void
       {
         for (i in 1...4)
