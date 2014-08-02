@@ -56,11 +56,11 @@ class TestContinuation
   {
     if (Math.random() < 0.5)
     {
-      forkJoin().async();
+      @await forkJoin();
     }
     else
     {
-      tuple2(1, 2).async();
+      @await tuple2(1, 2);
     }
   }
 
@@ -68,12 +68,12 @@ class TestContinuation
   {
     var a:Array<Int> = [1, 2, 3, 4];
     var joiner = new Counter(a.length);
-    Lambda.iter(a).async();
+    @await Lambda.iter(a);
     trace(a);
-    read(4).async();
+    @await read(4);
     trace(a);
-    joiner.join().async();
-    if (read(1).async() == 1)
+    @await joiner.join();
+    if ((@await read(1)) == 1)
     {
       return 1;
     }
@@ -97,7 +97,7 @@ class TestContinuation
 
   @:cps static function write(n:Int):Int
   {
-    forkJoin().async();
+    @await forkJoin();
     return n + 1;
   }
   @:cps static function void1(n:Int):Void
@@ -109,21 +109,21 @@ class TestContinuation
   {
     if (false)
     {
-      return hang0().async();
+      return @await hang0();
       Any.code.after._return_.will.be.gone();
     }
-    return void1(n).async();
+    return @await void1(n);
   }
 
   @:cps static function baz(n:Int):Int
   {
     if (false)
     {
-      return hang1().async();
+      return @await hang1();
       Any.code.after._return_.will.be.gone();
     }
-    void2(3).async();
-    return foo(n + 3).async();
+    @await void2(3);
+    return @await foo(n + 3);
   }
 
   static inline function hang0(handler:Void->Void):Void {}
@@ -133,10 +133,10 @@ class TestContinuation
   {
     if (true)
     {
-      return hang1().async();
+      return @await hang1();
       Any.code.after._return_.will.be.gone();
     }
-    return read(3).async() * 4 + hang1().async();
+    return (@await read(3)) * 4 + (@await hang1());
   }
 
   static function bar(n:Int, s:String, f:Float, handler:Int->Void):Void
@@ -169,19 +169,19 @@ class TestContinuation
     Continuation.cpsFunction(
       function testFor():Void
       {
-        var y = [ tuple2(0, 1).async(), 2, tuple2(3, 4).async()];
+        var y = [ @await tuple2(0, 1), 2, @await tuple2(3, 4)];
         trace(y.length);
-        var x = { b: 3, d: "xxx", asdf: read(34).async() };
+        var x = { b: 3, d: "xxx", asdf: @await read(34) };
         for (j in [2, 4, 5])
         {
           for (i in 0...123)
           {
-            var a, b = switch (read(3).async())
+            var a, b = switch (@await read(3))
             {
               case 2:
-                tuple2(2, 3).async();
+                @await tuple2(2, 3);
               default:
-                tuple2(1, 5).async();
+                @await tuple2(1, 5);
             }
           }
         }
@@ -197,24 +197,24 @@ class TestContinuation
         catch (x:Array<Dynamic>)
         {
           trace("catch");
-          foo(read(1).async()).async();
+          @await foo(@await read(1));
         }
-        read(
+        @await read(
           try
           {
             good(3, 2);
           }
           catch (x:Array<Dynamic>)
           {
-            foo(read(x[0]).async()).async();
+            @await foo(@await read(x[0]));
           }
           catch (x:IntMap<Dynamic>)
           {
           }
           catch (x:String)
           {
-            read(3).async();
-          }).async();
+            @await read(3);
+          });
       }
     );
     Continuation.cpsFunction(
@@ -237,14 +237,14 @@ class TestContinuation
 
     Continuation.cpsFunction(function myFunction():Int
     {
-      var ff = functionOfFunction().async();
+      var ff = @await functionOfFunction();
       trace(ff);
-      return ff().async();
+      return @await ff();
     });
     Continuation.cpsFunction(function multiVar()
     {
-      var c = 1, a, b = doubleResult().async();
-      return tuple2(c, a).async();
+      var c = 1, a, b = @await doubleResult();
+      return @await tuple2(c, a);
     });
     #if haxe3
     var asyncDo = read.bind(3);
@@ -253,28 +253,28 @@ class TestContinuation
     #end
     Continuation.cpsFunction(function myFunction():Int
     {
-      var xxx = bar(234, "foo", 34.5).async();
-      var result = read(2).async();
+      var xxx = @await bar(234, "foo", 34.5);
+      var result = @await read(2);
 
-      var z = asyncDo().async() + 2 * bar(asyncDo().async(), "foo", 34.5).async() + read(read(2).async()).async();
-      var x = good(asyncDo().async(), bar(asyncDo().async(), "foo", 34.5).async());
-      var c = asyncDo().async();
+      var z = (@await asyncDo()) + 2 * (@await bar(@await asyncDo(), "foo", 34.5)) + @await read(@await read(2));
+      var x = good(@await asyncDo(), @await bar(@await asyncDo(), "foo", 34.5));
+      var c = @await asyncDo();
       var a = 1 + 2 * x + z;
-      var b = 3 + 4 + c, d = a +  asyncDo().async(), e = asyncDo().async() * asyncDo().async();
-      return asyncDo().async() + a + b * e + d - c;
+      var b = 3 + 4 + c, d = a + @await asyncDo(), e = (@await asyncDo()) * @await asyncDo();
+      return (@await asyncDo()) + a + b * e + d - c;
     });
 
     Continuation.cpsFunction(function myFunction2():Int
     {
       good(3, 4);
-      return 1 + myFunction().async();
+      return 1 + @await myFunction();
     });
     Continuation.cpsFunction(function myFunction3():Int
     {
       good(4, 5);
-      myFunction().async();
-      myFunction().async();
-      return read(3).async();
+      @await myFunction();
+      @await myFunction();
+      return @await read(3);
     });
     Continuation.cpsFunction(function myFunction():Int
     {
@@ -287,42 +287,42 @@ class TestContinuation
     });
     Continuation.cpsFunction(function myFunction():Int
     {
-      return asyncDo().async();
+      return @await asyncDo();
       return 2;
     });
     Continuation.cpsFunction(function myFunction33():Int
     {
-      if (asyncDo().async() == 0)
+      if ((@await asyncDo()) == 0)
       {
         return 44;
       }
       else
       {
-        return asyncDo().async();
+        return @await asyncDo();
       }
-      var a = (asyncDo().async() == 0 ? 1 : 2);
-      return (if (asyncDo().async() == 0)
+      var a = ((@await asyncDo()) == 0 ? 1 : 2);
+      return (if ((@await asyncDo()) == 0)
         {
           return 2;
         }
-        else if (asyncDo().async() == 1)
+        else if ((@await asyncDo()) == 1)
         {
-          asyncDo().async();
+          @await asyncDo();
         }
         else
         {
           43;
-        }) + (if (asyncDo().async() == 0) { asyncDo().async(); } else { 1; } );
+        }) + (if ((@await asyncDo()) == 0) { @await asyncDo(); } else { 1; } );
     });
 
     Continuation.cpsFunction(function testWhile():Int
     {
-      while (asyncDo().async() > 1)
+      while ((@await asyncDo()) > 1)
       {
-        asyncDo().async();
+        @await asyncDo();
         if (true) break;
-        if (asyncDo().async() <= 4) continue;
-        asyncDo().async();
+        if ((@await asyncDo()) <= 4) continue;
+        @await asyncDo();
       }
       return 1;
     });

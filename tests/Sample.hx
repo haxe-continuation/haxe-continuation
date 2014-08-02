@@ -47,7 +47,7 @@ class Sample
       trace("Start continuation.");
       for (i in 0...10)
       {
-        sleepOneSecond().async();
+        @await sleepOneSecond();
         trace("Run sleepOneSecond " + i + " times.");
       }
       trace("Continuation is done.");
@@ -77,7 +77,7 @@ class Sample2
     trace("Start continuation.");
     for (i in 0...10)
     {
-      sleepOneSecond().async();
+      @await sleepOneSecond();
       trace("Run sleepOneSecond " + i + " times.");
     }
     trace("Continuation is done.");

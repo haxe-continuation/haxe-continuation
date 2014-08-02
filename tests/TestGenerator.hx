@@ -45,7 +45,7 @@ class TestGenerator
       for (j in 1...(i+1))
       {
         trace('$j * $i =');
-        yield(i * j).async();
+        @await yield(i * j);
         trace("-------");
       }
     }

@@ -47,7 +47,7 @@ class TestForkJoin
   @:cps public static function startWorkerThreads(parentId:Int, childrenIds:Array<Int>):Array<Int>
   {
     trace("Before fork");
-    var threadId, collect = ForkJoin.startCollectors(childrenIds).async();
+    var threadId, collect = @await ForkJoin.startCollectors(childrenIds);
     var result = collect(
     {
       trace("Start sub-thread #" + parentId + "." + threadId);
@@ -70,13 +70,13 @@ class TestForkJoin
     var threadIds = [ 0, 1, 2, 3 ];
     trace("Before fork");
     {
-      var threadId, join = ForkJoin.startThreads(threadIds).async();
+      var threadId, join = @await ForkJoin.startThreads(threadIds);
       trace("Start thread #" + threadId);
 
-      trace("Data from sub-threads of #" + threadId + ": " + Std.string(startWorkerThreads(threadId, [0, 1, 2, 3, 4, 5]).async()));
+      trace("Data from sub-threads of #" + threadId + ": " + Std.string\(@await startWorkerThreads(threadId, [0, 1, 2, 3, 4, 5])));
 
       trace("Joining thread #" + threadId + "...");
-      join().async();
+      @await join();
     }
     trace("All threads are joined.");
   }

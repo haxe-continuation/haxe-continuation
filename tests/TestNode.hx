@@ -46,9 +46,9 @@ class TestNode
     while (totalWritten < content.length)
     {
       var err, written =
-        Node.fs.write(
+        @await Node.fs.write(
           fd, content,
-          totalWritten, content.length - totalWritten, null).async();
+          totalWritten, content.length - totalWritten, null);
       if (err != null)
       {
         return err;
@@ -63,7 +63,7 @@ class TestNode
    */
   @cps static function startTest():Void
   {
-    var err = Node.fs.mkdir("TestNode").async();
+    var err = @await Node.fs.mkdir("TestNode");
     if (err != null)
     {
       trace("Node.fs.mkdir failed: " + err);
@@ -76,7 +76,7 @@ class TestNode
     
     // Note that some asynchronous functions return more than one values!
     // It's OK in CPS functions, just like Lua.
-    var err, fd = Node.fs.open("TestNode/" + fileName, "w+").async();
+    var err, fd = @await Node.fs.open("TestNode/" + fileName, "w+");
     if (err != null)
     {
       trace("Node.fs.open failed: " + err);
@@ -84,14 +84,14 @@ class TestNode
     }
     
     // Invoke another CPS function.
-    var err = writeAll(fd, "Content of " + fileName).async();
+    var err = @await writeAll(fd, "Content of " + fileName);
     if (err != null)
     {
       trace("Node.fs.write failed: " + err);
       return;
     }
     
-    var err = Node.fs.close(fd).async();
+    var err = @await Node.fs.close(fd);
     if (err != null)
     {
       trace("Node.fs.close failed: " + err);
