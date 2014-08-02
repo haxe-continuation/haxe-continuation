@@ -250,6 +250,48 @@ class ContinuationDetail
     return exprs[0];
   }
 
+  static function transformTailCallAwait(e:Expr, originParams:Array<Expr>, rest:Array<Expr>->Expr):Expr
+  {
+    // 优化 e 是另一个异步函数的情况
+    function transformNext(i:Int, transformedParameters:Null<GenericCell<Expr>>):Expr
+    {
+      if (i == originParams.length)
+      {
+        return transformNoDelay(e, ANY, function(functionResult)
+        {
+          var a = toReverseArray(transformedParameters);
+          a.push(
+          {
+            expr: EConst(CIdent("__return")),
+            pos: e.pos
+          });
+          return
+          {
+            pos: e.pos,
+            expr: ECall(
+              unpack(functionResult, e.pos),
+              a),
+          };
+        });
+      }
+      else
+      {
+        return transformNoDelay(
+          originParams[i],
+          ANY,
+          function(parameterResult:Array<Expr>):Expr
+          {
+            return transformNext(
+              i + 1,
+              pushMulti(
+                transformedParameters,
+                parameterResult));
+          });
+      }
+    }
+    return transformNext(0, null);
+  }
+
   static function transformAwait(e:Expr, originParams:Array<Expr>, rest:Array<Expr>->Expr):Expr
   {
     function transformNext(i:Int, transformedParameters:Null<GenericCell<Expr>>):Expr
@@ -986,6 +1028,27 @@ class ContinuationDetail
         }
         switch (returnExpr.expr)
         {
+          case EMeta(s, e):
+          {
+            switch (e.expr)
+            {
+              case ECall(functionExpr, params):
+              {
+                if (s.name == "await" && s.params.empty())
+                {
+                  return transformTailCallAwait(functionExpr, params, rest);
+                }
+                else
+                {
+                  return rest([origin]);
+                }
+              }
+              default:
+              {
+                return rest([origin]);
+              }
+            }
+          }
           case ECall(e, originParams):
           {
             if (originParams.length == 0)
@@ -1000,46 +1063,8 @@ class ContinuationDetail
                     {
                       case ECall(e, originParams):
                       {
-                        // 优化 e 是另一个异步函数的情况
-                        function transformNext(i:Int, transformedParameters:Null<GenericCell<Expr>>):Expr
-                        {
-                          if (i == originParams.length)
-                          {
-                            return transformNoDelay(e, ANY, function(functionResult)
-                            {
-                              var a =
-                                toReverseArray(
-                                  transformedParameters);
-                              a.push(
-                              {
-                                expr: EConst(CIdent("__return")),
-                                pos: origin.pos
-                              });
-                              return
-                              {
-                                pos: origin.pos,
-                                expr: ECall(
-                                  unpack(functionResult, origin.pos),
-                                  a),
-                              };
-                            });
-                          }
-                          else
-                          {
-                            return transformNoDelay(
-                              originParams[i],
-                              ANY,
-                              function(parameterResult:Array<Expr>):Expr
-                              {
-                                return transformNext(
-                                  i + 1,
-                                  pushMulti(
-                                    transformedParameters,
-                                    parameterResult));
-                              });
-                          }
-                        }
-                        return transformNext(0, null);
+                        Context.warning("`.async()` is deprecated. Please use `@await` instead.", origin.pos);
+                        return transformTailCallAwait(e, originParams, rest);
                       }
                       default:
                     }
