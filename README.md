@@ -70,7 +70,7 @@ before a class, and mark the CPS functions in that class as `@:async`:
     
     }
 
-In CPS functions, `async` is a magic word to invoke other
+In CPS functions, `@await` is a magic word to invoke other
 async functions. When calling an asynchronous function with the `@await` prefix, you need not to explicitly pass a callback
 function. Instead, the code after `@await` will be captured as the callback
 function for the callee.
