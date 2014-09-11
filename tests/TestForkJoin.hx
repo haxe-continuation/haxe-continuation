@@ -40,7 +40,11 @@ class TestForkJoin
 {
   static function sleep(time_ms:Int, handler:Void->Void):Void
   {
+    #if cs
+    handler();
+    #else
     Timer.delay(handler, time_ms);
+    #end
   }
 
   /** Start 4 worker threads. Every worker is a collector. */
