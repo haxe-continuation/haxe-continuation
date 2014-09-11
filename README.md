@@ -1,6 +1,8 @@
 haxe-continuation
 =================
 
+<div align="right"><a href="https://travis-ci.org/Atry/haxe-continuation"><img alt="Build Status" src="https://travis-ci.org/Atry/haxe-continuation.png?branch=master"/></a></div>
+
 An *asynchronous functions* is a function that accept its last parameter 
 as a callback function.
 And **haxe-continuation** is a macro library enables you to invoke and write
