@@ -6,3 +6,5 @@ before_install:
  - travis_retry sudo apt-get install -qq haxe neko ocaml
  - travis_retry sudo haxelib setup .haxelib
  - travis_retry sudo haxelib install nodejs
+ - travis_retry sudo haxelib install hxjava
+ - travis_retry sudo haxelib install hxcs
