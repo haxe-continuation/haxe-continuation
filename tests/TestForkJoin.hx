@@ -73,7 +73,7 @@ class TestForkJoin
       var threadId, join = @await ForkJoin.startThreads(threadIds);
       trace("Start thread #" + threadId);
 
-      trace("Data from sub-threads of #" + threadId + ": " + Std.string\(@await startWorkerThreads(threadId, [0, 1, 2, 3, 4, 5])));
+      trace("Data from sub-threads of #" + threadId + ": " + Std.string(@await startWorkerThreads(threadId, [0, 1, 2, 3, 4, 5])));
 
       trace("Joining thread #" + threadId + "...");
       @await join();
