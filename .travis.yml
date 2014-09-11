@@ -1,0 +1,6 @@
+language: cpp
+
+before_install:
+ - sudo add-apt-repository ppa:eyecreate/haxe -y
+ - travis_retry sudo apt-get update -qq
+ - travis_retry sudo apt-get install -qq haxe neko ocaml
