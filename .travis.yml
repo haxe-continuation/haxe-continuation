@@ -5,3 +5,4 @@ before_install:
  - travis_retry sudo apt-get update -qq
  - travis_retry sudo apt-get install -qq haxe neko ocaml
  - travis_retry sudo haxelib setup .haxelib
+ - travis_retry sudo haxelib install nodejs
