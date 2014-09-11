@@ -3,7 +3,7 @@ language: cpp
 before_install:
  - travis_retry sudo add-apt-repository ppa:eyecreate/haxe -y
  - travis_retry sudo apt-get update -qq
- - travis_retry sudo apt-get install -qq haxe neko ocaml
+ - travis_retry sudo apt-get install -qq haxe neko ocaml mono
  - travis_retry sudo haxelib setup .haxelib
  - travis_retry sudo haxelib install nodejs
  - travis_retry sudo haxelib install hxjava
