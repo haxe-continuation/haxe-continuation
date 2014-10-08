@@ -1,7 +1,7 @@
 haxe-continuation
 =================
 
-<div align="right"><a href="https://travis-ci.org/Atry/haxe-continuation"><img alt="Build Status" src="https://travis-ci.org/Atry/haxe-continuation.png?branch=master"/></a></div>
+<div align="right"><a href="https://travis-ci.org/Atry/haxe-continuation"><img alt="Build Status" src="https://travis-ci.org/Atry/haxe-continuation.png?branch=haxe-3"/></a></div>
 
 An *asynchronous functions* is a function that accept its last parameter 
 as a callback function.
