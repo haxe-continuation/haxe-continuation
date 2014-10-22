@@ -12,5 +12,5 @@
 	<tag v="neko"/>
 	<tag v="php"/>
 	<description>Enable continuation in Haxe</description>
-	<version name="1.2.0"><ul><li>Support <code>@await</code> syntax.</li></ul></version>
+	<version name="1.2.1"><ul><li>Create parsable <code>haxe.macro.Expr</code> for <code>haxe.macro.Printer</code>.</li></ul></version>
 </project>
