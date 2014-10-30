@@ -37,7 +37,11 @@ class Sample
 {
   static function sleepOneSecond(handler:Void->Void):Void
   {
+    #if cs
+    handler();
+    #else
     haxe.Timer.delay(handler, 1000);
+    #end
   }
   
   public static function main() 
@@ -70,7 +74,11 @@ class Sample2
 {
   static function sleepOneSecond(handler:Void->Void):Void
   {
+    #if cs
+    handler();
+    #else
     haxe.Timer.delay(handler, 1000);
+    #end
   }
   @cps static function asyncTest():Void
   {

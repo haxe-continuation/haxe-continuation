@@ -697,20 +697,24 @@ class ContinuationDetail
           expr: ECall(
             {
               pos: origin.pos,
-              expr: EFunction(null,
+              expr: EParenthesis(
                 {
-                  ret: null,
-                  expr: entry,
-                  params: [],
-                  args:
-                  [
+                  pos: origin.pos,
+                  expr: EFunction(null,
                     {
-                      name: functionName,
-                      opt: false,
-                      type: null,
-                      value: null,
-                    },
-                  ],
+                      ret: null,
+                      expr: entry,
+                      params: [],
+                      args:
+                      [
+                        {
+                          name: functionName,
+                          opt: false,
+                          type: null,
+                          value: null,
+                        },
+                      ],
+                    }),
                 }),
             },
             [
