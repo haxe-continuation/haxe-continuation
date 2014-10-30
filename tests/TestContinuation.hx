@@ -335,6 +335,9 @@ class TestContinuation
       {
         trace(@await asyncDo() * e);
       }
+      var a1 = [ for (e in v) e * 2 ];
+      var a2 = [ for (e in v) if (e < 2) e * 2 ];
+      var a3 = [ for (e in v) { if (e < 2) e * 2; } ];
     });
   }
 

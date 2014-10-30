@@ -240,6 +240,15 @@ class ContinuationDetail
     return exprs[0];
   }
 
+  static function unblock(expr:Expr):Expr
+  {
+    switch (expr.expr)
+    {
+      case EBlock([ b ]): return unblock(b);
+      case _: return expr;
+    }
+  }
+
   static function transformTailCallAwait(e:Expr, originParams:Array<Expr>, rest:Array<Expr>->Expr):Expr
   {
     // 优化 e 是另一个异步函数的情况
@@ -1406,6 +1415,80 @@ class ContinuationDetail
                     ]);
                 });
               });
+          }
+        }
+      }
+      case EArrayDecl(
+        [
+          {
+            expr: EFor(
+              {
+                expr: EIn(
+                  {
+                    expr: EConst(CIdent(elementName)),
+                  },
+                  e2),
+              },
+              expr),
+          }
+        ]):
+      {
+        var toIteratorExpr =
+        {
+          expr: ECall(
+            macro com.dongxiguo.continuation.Continuation.ContinuationDetail.toIterator,
+            [ e2 ]),
+          pos: Context.currentPos(),
+        }
+        var hasNextExpr =
+        {
+          expr: ECall(
+            macro com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext,
+            [ e2, macro __iterator ]),
+          pos: Context.currentPos(),
+        }
+        var nextExpr =
+        {
+          expr: ECall(
+            macro com.dongxiguo.continuation.Continuation.ContinuationDetail.next,
+            [ e2, macro __iterator ]),
+          pos: Context.currentPos(),
+        }
+        switch (unblock(expr))
+        {
+          case { expr: EIf(econd, eif, null) }:
+          {
+            var transformed = transformNoDelay(
+              macro
+              {
+                var __arrayBuilder = [];
+                while ($hasNextExpr)
+                {
+                  var $elementName = $nextExpr;
+                  if ($econd) __arrayBuilder.push($eif);
+                }
+                __arrayBuilder;
+              },
+              EXACT(1),
+              rest);
+            return macro { var __iterator = $toIteratorExpr; $transformed; };
+          }
+          case forBody:
+          {
+            var transformed = transformNoDelay(
+              macro
+              {
+                var __arrayBuilder = [];
+                while ($hasNextExpr)
+                {
+                  var $elementName = $nextExpr;
+                  __arrayBuilder.push($forBody);
+                }
+                __arrayBuilder;
+              },
+              EXACT(1),
+              rest);
+            return macro { var __iterator = $toIteratorExpr; $transformed; };
           }
         }
       }
