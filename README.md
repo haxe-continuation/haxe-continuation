@@ -37,40 +37,42 @@ haxe-continuation is tested with Haxe 3.1.3.
 To write a CPS function, put `@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))`
 before a class, and mark the CPS functions in that class as `@:async`:
 
-    import com.dongxiguo.continuation.Continuation;
-    @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
-    class Sample
+``` haxe
+import com.dongxiguo.continuation.Continuation;
+@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
+class Sample
+{
+
+  // An asynchronous function without automatical CPS transformation.
+  static function sleepOneSecond(handler:Void->Void):Void
+  {
+    haxe.Timer.delay(handler, 1000);
+  }
+
+  // The magic @:async transforms this function to:
+  // static function asyncTest(__return:Void->Void):Void
+  @:async static function asyncTest():Void
+  {
+    trace("Start continuation.");
+    for (i in 0...10)
     {
-    
-      // An asynchronous function without automatical CPS transformation.
-      static function sleepOneSecond(handler:Void->Void):Void
-      {
-        haxe.Timer.delay(handler, 1000);
-      }
-    
-      // The magic @:async transforms this function to:
-      // static function asyncTest(__return:Void->Void):Void
-      @:async static function asyncTest():Void
-      {
-        trace("Start continuation.");
-        for (i in 0...10)
-        {
-          // Magic @await prefix to invoke an asynchronous function.
-          @await sleepOneSecond();
-          trace("Run sleepOneSecond " + i + " times.");
-        }
-        trace("Continuation is done.");
-      }
-    
-      public static function main() 
-      {
-        asyncTest(function()
-        {
-          trace("Handler without continuation.");
-        });
-      }
-    
+      // Magic @await prefix to invoke an asynchronous function.
+      @await sleepOneSecond();
+      trace("Run sleepOneSecond " + i + " times.");
     }
+    trace("Continuation is done.");
+  }
+
+  public static function main() 
+  {
+    asyncTest(function()
+    {
+      trace("Handler without continuation.");
+    });
+  }
+
+}
+```
 
 In CPS functions, `@await` is a magic word to invoke other
 async functions. When calling an asynchronous function with the `@await` prefix, you need not to explicitly pass a callback
@@ -79,35 +81,37 @@ function for the callee.
 
 Another way is using `Continuation.cpsFunction` macro to write nested CPS functions:
 
-    import com.dongxiguo.continuation.Continuation;
-    class Sample2
+``` haxe
+import com.dongxiguo.continuation.Continuation;
+class Sample2
+{
+  // An asynchronous function without automatically CPS transformation.
+  static function sleepOneSecond(handler:Void->Void):Void
+  {
+    haxe.Timer.delay(handler, 1000);
+  }
+  public static function main() 
+  {
+    // This magic macro will transform function asyncTest to:
+    // function asyncTest(__return:Void->Void):Void
+    Continuation.cpsFunction(function asyncTest():Void
     {
-      // An asynchronous function without automatically CPS transformation.
-      static function sleepOneSecond(handler:Void->Void):Void
+      trace("Start continuation.");
+      for (i in 0...10)
       {
-        haxe.Timer.delay(handler, 1000);
+        // Magic @await prefix to invoke an asynchronous function.
+        @await sleepOneSecond();
+        trace("Run sleepOneSecond " + i + " times.");
       }
-      public static function main() 
-      {
-        // This magic macro will transform function asyncTest to:
-        // function asyncTest(__return:Void->Void):Void
-        Continuation.cpsFunction(function asyncTest():Void
-        {
-          trace("Start continuation.");
-          for (i in 0...10)
-          {
-            // Magic @await prefix to invoke an asynchronous function.
-            @await sleepOneSecond();
-            trace("Run sleepOneSecond " + i + " times.");
-          }
-          trace("Continuation is done.");
-        });
-        asyncTest(function()
-        {
-          trace("Handler without continuation.");
-        });
-      }
-    }
+      trace("Continuation is done.");
+    });
+    asyncTest(function()
+    {
+      trace("Handler without continuation.");
+    });
+  }
+}
+```
 
 
 See https://github.com/Atry/haxe-continuation/blob/haxe-3/tests/TestContinuation.hx
@@ -124,31 +128,33 @@ haxe-continuation also provides an utility to wrap CPS functions into `Iterator`
 
 For example:
 
-    using com.dongxiguo.continuation.utils.Generator;
-    @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
-    class TestGenerator
+``` haxe
+using com.dongxiguo.continuation.utils.Generator;
+@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
+class TestGenerator
+{
+  @:async
+  static function intGenerator(yield:YieldFunction<Int>):Void
+  {
+    for (i in 1...4)
     {
-      @:async
-      static function intGenerator(yield:YieldFunction<Int>):Void
+      for (j in 1...(i+1))
       {
-        for (i in 1...4)
-        {
-          for (j in 1...(i+1))
-          {
-            trace('$j * $i =');
-            @await yield(i * j);
-            trace("-------");
-          }
-        }
-      }
-      public static function main() 
-      {
-        for (i in intGenerator)
-        {
-          trace(i);
-        }
+        trace('$j * $i =');
+        @await yield(i * j);
+        trace("-------");
       }
     }
+  }
+  public static function main() 
+  {
+    for (i in intGenerator)
+    {
+      trace(i);
+    }
+  }
+}
+```
 
 The output:
 
