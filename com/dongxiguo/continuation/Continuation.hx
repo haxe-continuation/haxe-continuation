@@ -33,13 +33,9 @@ package com.dongxiguo.continuation;
 import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr;
+import haxe.ds.GenericStack.GenericCell;
 #end
-#if haxe3
-import haxe.ds.GenericStack;
-#else
-import haxe.FastList;
-typedef GenericCell<T> = FastCell<T>;
-#end
+
 using Lambda;
 
 @:final
@@ -51,14 +47,8 @@ class Continuation
     In the wrapped function, you can use `.async()` suffix to invoke other
     asynchronous functions.
    **/
-  #if haxe3
-    #if (haxe_ver >= 3.1)
-      @:noUsing
-    #end
-    macro
-  #else
-    @:macro
-  #end
+  @:noUsing
+  macro
   public static function cpsFunction(expr:Expr):Expr
   {
     switch (expr.expr)
@@ -136,7 +126,7 @@ class Continuation
     invokes other asynchronous functions.
   **/
   @:noUsing
-  #if haxe3 macro #else @:macro #end
+  macro
   public static function cpsByMeta(metaName:String):Array<Field>
   {
     var bf = Context.getBuildFields();
@@ -381,11 +371,7 @@ class ContinuationDetail
                         {
                           opt: handlerArg.opt,
                           name: name,
-                          #if (haxe3 || haxe_211)
                           type: haxe.macro.TypeTools.toComplexType(handlerArg.t),
-                          #else
-                          type: null,
-                          #end
                           value: null
                         });
                     }
@@ -498,7 +484,6 @@ class ContinuationDetail
   {
     switch (origin.expr)
     {
-      #if (haxe_211 || haxe3)
       case EMeta(s, e):
       {
         switch (e.expr)
@@ -520,7 +505,6 @@ class ContinuationDetail
           }
         }
       }
-      #end
       case EWhile(econd, e, normalWhile):
       {
         var continueName = "__continue_" + seed++;
@@ -800,24 +784,6 @@ class ContinuationDetail
               ]);
           });
       }
-      #if !haxe3
-      case EType(e, field):
-      {
-        return transformNoDelay(
-          e,
-          EXACT(1),
-          function(eResult)
-          {
-            return rest(
-              [
-                {
-                  pos: origin.pos,
-                  expr: EType(unpack(eResult, origin.pos), field)
-                }
-              ]);
-          });
-      }
-      #end
       case ETry(e, catches):
       {
         var endTryName = "__endTry_" + seed++;
@@ -828,19 +794,17 @@ class ContinuationDetail
         }
         var isVoidTry = switch (Context.follow(Context.typeof(e)))
         {
-          #if (haxe_211 || haxe3)
           case TAbstract(t, params):
-          #else
-          case TInst(t, params):
-          #end
-          if (params.length != 0)
           {
-            false;
-          }
-          else
-          {
-            var voidType = t.get();
-            voidType.module == "StdTypes" && voidType.name == "Void";
+            if (params.length != 0)
+            {
+              false;
+            }
+            else
+            {
+              var voidType = t.get();
+              voidType.module == "StdTypes" && voidType.name == "Void";
+            }
           }
           default: false;
         }
@@ -968,22 +932,20 @@ class ContinuationDetail
         var wrapper = new Wrapper(parameterRequirement, rest);
         return transformNoDelay(e, EXACT(1), function(eResult)
         {
-          #if (haxe_211 || haxe3)
           function transformGuard(guard:Null<Expr>):Expr
           {
             // Workaround to enable default:
             return parameterRequirement == IGNORE && guard == null ? macro true : guard;
           }
-          #end
           var transformedCases = cases.map(function(c)
           {
             if (c.expr == null)
             {
-              return { expr: wrapper.invocation([]), #if (haxe_211 || haxe3) guard: transformGuard(c.guard), #end values: c.values };
+              return { expr: wrapper.invocation([]), guard: transformGuard(c.guard), values: c.values };
             }
             else
             {
-              return { expr: transform(c.expr, ANY, wrapper.invocation), #if (haxe_211 || haxe3) guard: transformGuard(c.guard), #end values: c.values };
+              return { expr: transform(c.expr, ANY, wrapper.invocation), guard: transformGuard(c.guard), values: c.values };
             }
           }).array();
           var entry = if (edef == null)
@@ -1211,7 +1173,6 @@ class ContinuationDetail
                   Context.error("Expect identify before \"in\".", e1.pos);
                 }
               }
-            #if (haxe_211 || haxe3)
             var getIteratorExpr =
             {
               expr: ECall(
@@ -1219,20 +1180,6 @@ class ContinuationDetail
                 [ e2 ]),
               pos: Context.currentPos(),
             }
-            #else
-            var getIteratorExpr = macro
-            {
-              var __tempIterator = null;
-              #if no_inline #else inline #end function setIterator<T>(
-                ?iterable:Iterable<T> = null,
-                ?iterator:Iterator<T> = null):Void
-              {
-                __tempIterator = iterable != null ? iterable.iterator() : iterator;
-              }
-              setIterator($e2);
-              __tempIterator;
-            }
-            #end
             var body = transformNoDelay(
               macro
               {
@@ -1547,14 +1494,14 @@ class ContinuationDetail
   #end
 
   @:noUsing
-  #if haxe3 macro #else @:macro #end
+  macro
   public static function runDelayedFunction(id:Int):Expr
   {
     return delayFunctions[id]();
   }
-  #if (haxe_211 || haxe3)
+
   @:noUsing
-  #if haxe3 macro #else @:macro #end
+  macro
   public static function toIterator(iterator:Expr):Expr
   {
     function toType(c:ComplexType):Null<Type>
@@ -1586,7 +1533,7 @@ class ContinuationDetail
       return macro $iterator.iterator();
     }
   }
-  #end
+
 }
 
 #if macro

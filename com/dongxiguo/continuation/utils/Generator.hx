@@ -39,11 +39,7 @@ class Generator<Element>
 
   public function new(runFunction:RunFunction<Element>)
   {
-    #if (haxe_211 || haxe3)
     this.status = UNKNOWN(runFunction.bind(this.yield, this.end));
-    #else
-    this.status = UNKNOWN(callback(runFunction, this.yield, this.end));
-    #end
   }
 
   function end():Void

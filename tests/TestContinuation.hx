@@ -29,11 +29,7 @@
 
 package tests;
 
-#if haxe3
 import haxe.ds.IntMap;
-#else
-private typedef IntMap<Element> = IntHash<Element>;
-#end
 
 using com.dongxiguo.continuation.Continuation;
 
@@ -246,11 +242,7 @@ class TestContinuation
       var c = 1, a, b = @await doubleResult();
       return @await tuple2(c, a);
     });
-    #if haxe3
     var asyncDo = read.bind(3);
-    #else
-    var asyncDo = callback(read, 3);
-    #end
     Continuation.cpsFunction(function myFunction():Int
     {
       var xxx = @await bar(234, "foo", 34.5);
