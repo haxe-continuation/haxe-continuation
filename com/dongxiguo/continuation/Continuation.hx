@@ -1173,25 +1173,36 @@ class ContinuationDetail
                   Context.error("Expect identify before \"in\".", e1.pos);
                 }
               }
-            var getIteratorExpr =
+            var toIteratorExpr =
             {
               expr: ECall(
                 macro com.dongxiguo.continuation.Continuation.ContinuationDetail.toIterator,
                 [ e2 ]),
               pos: Context.currentPos(),
             }
+            var hasNextExpr =
+            {
+              expr: ECall(
+                macro com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext,
+                [ e2, macro __iterator ]),
+              pos: Context.currentPos(),
+            }
+            var nextExpr =
+            {
+              expr: ECall(
+                macro com.dongxiguo.continuation.Continuation.ContinuationDetail.next,
+                [ e2, macro __iterator ]),
+              pos: Context.currentPos(),
+            }
             var body = transformNoDelay(
-              macro
+              macro while ($hasNextExpr)
               {
-                while (__iterator.hasNext())
-                {
-                  var $elementName = __iterator.next();
-                  $expr;
-                }
+                var $elementName = $nextExpr;
+                $expr;
               },
               IGNORE,
               rest);
-            return macro { var __iterator = $getIteratorExpr; $body; };
+            return macro { var __iterator = $toIteratorExpr; $body; };
           }
           default:
           {
@@ -1491,6 +1502,39 @@ class ContinuationDetail
     }
   }
 
+  static function hasArrayAccess(abstractType:AbstractType):Bool
+  {
+    if (abstractType.meta.has(":arrayAccess"))
+    {
+      return true;
+    }
+    else
+    {
+      return !abstractType.array.empty();
+    }
+  }
+
+  static function hasLength(abstractType:AbstractType):Bool
+  {
+    var impl = abstractType.impl;
+    if (impl == null)
+    {
+      return false;
+    }
+    else
+    {
+      for (field in impl.get().statics.get())
+      {
+        switch (field)
+        {
+          case { kind: FVar(AccCall, _), name: "length" }: return true;
+          default: continue;
+        }
+      }
+      return false;
+    }
+  }
+
   #end
 
   @:noUsing
@@ -1502,35 +1546,79 @@ class ContinuationDetail
 
   @:noUsing
   macro
-  public static function toIterator(iterator:Expr):Expr
+  public static function next(iterable:Expr, iterator:Expr):Expr
   {
-    function toType(c:ComplexType):Null<Type>
+    switch (Context.follow(Context.typeof(iterable)))
     {
-      return c == null ? null : haxe.macro.Context.typeof( { expr: ECheckType(macro null, c), pos: Context.currentPos() } );
-    }
-    if (
-      Context.unify(Context.typeof(iterator), toType(TPath(
+      case TAbstract(_.get() => a, _) if (hasArrayAccess(a) && hasLength(a)):
       {
-        name: "Iterator",
-        pack: [],
-        sub: null,
-        params:
-        [
-          TPType(TPath(
-            {
-              name: "Dynamic",
-              pack: [],
-              sub: null,
-              params: [],
-            })),
-        ]
-      }))))
-    {
-      return iterator;
+        return macro $iterable[$iterator++];
+      }
+      case iterableType:
+      {
+        return macro $iterator.next();
+      }
     }
-    else
+  }
+
+  @:noUsing
+  macro
+  public static function hasNext(iterable:Expr, iterator:Expr):Expr
+  {
+    switch (Context.follow(Context.typeof(iterable)))
     {
-      return macro $iterator.iterator();
+      case TAbstract(_.get() => a, _) if (hasArrayAccess(a) && hasLength(a)):
+      {
+        return macro $iterator < $iterable.length;
+      }
+      case iterableType:
+      {
+        return macro $iterator.hasNext();
+      }
+    }
+  }
+
+  @:noUsing
+  macro
+  public static function toIterator(iterable:Expr):Expr
+  {
+    switch (Context.follow(Context.typeof(iterable)))
+    {
+      case TAbstract(_.get() => a, _) if (hasArrayAccess(a) && hasLength(a)):
+      {
+        return macro 0;
+      }
+      case iterableType:
+      {
+        function toType(c:ComplexType):Null<Type>
+        {
+          return c == null ? null : haxe.macro.Context.typeof( { expr: ECheckType(macro null, c), pos: Context.currentPos() } );
+        }
+        if (
+          Context.unify(iterableType, toType(TPath(
+          {
+            name: "Iterator",
+            pack: [],
+            sub: null,
+            params:
+            [
+              TPType(TPath(
+                {
+                  name: "Dynamic",
+                  pack: [],
+                  sub: null,
+                  params: [],
+                })),
+            ]
+          }))))
+        {
+          return iterable;
+        }
+        else
+        {
+          return macro $iterable.iterator();
+        }
+      }
     }
   }
 

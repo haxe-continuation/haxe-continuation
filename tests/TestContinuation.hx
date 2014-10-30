@@ -30,6 +30,7 @@
 package tests;
 
 import haxe.ds.IntMap;
+import haxe.ds.Vector;
 
 using com.dongxiguo.continuation.Continuation;
 
@@ -325,6 +326,15 @@ class TestContinuation
 
       }
       while (true);
+    });
+
+    Continuation.cpsFunction(function testVectorForLoop():Void
+    {
+      var v = haxe.ds.Vector.fromArrayCopy([1, 2, 3]);
+      for (e in v)
+      {
+        trace(@await asyncDo() * e);
+      }
     });
   }
 
