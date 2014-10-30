@@ -12,5 +12,5 @@
 	<tag v="neko"/>
 	<tag v="php"/>
 	<description>Enable continuation in Haxe</description>
-	<version name="1.2.2"><ul><li>Add <code>Generator.toEnumerator</code> for C#.</li></ul></version>
+	<version name="1.3.0"><ul><li>Support array comprehension;</li><li>Support <code>for</code> loop for <code>haxe.ds.Vector</code>;</li><li>Do not support Haxe 2 any more.</li></ul></version>
 </project>
