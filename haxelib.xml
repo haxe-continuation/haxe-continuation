@@ -12,5 +12,5 @@
 	<tag v="neko"/>
 	<tag v="php"/>
 	<description>Enable continuation in Haxe</description>
-	<version name="1.2.1"><ul><li>Create parsable <code>haxe.macro.Expr</code> for <code>haxe.macro.Printer</code>.</li></ul></version>
+	<version name="1.2.2"><ul><li>Add <code>Generator.toEnumerator</code> for C#.</li></ul></version>
 </project>
