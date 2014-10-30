@@ -153,6 +153,19 @@ class Generator<Element>
       iterator: function() { return new Generator(runFunction); },
     }
   }
+
+  #if cs
+
+  @:functionCode('
+    var generator = new com.dongxiguo.continuation.utils.Generator<object>(runFunction);
+    while (generator.hasNext())
+    {
+      yield return generator.next();
+    }
+  ')
+  public static function toEnumerator(runFunction:RunFunction<Dynamic>):cs.system.collections.IEnumerator return null;
+
+  #end
 }
 
 typedef RunFunction<Element> = YieldFunction<Element>->(Void->Void)->Void;
