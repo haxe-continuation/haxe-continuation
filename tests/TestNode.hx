@@ -28,6 +28,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 package tests;
+#if (nodejs && js)
 import js.Node;
 import com.dongxiguo.continuation.Continuation;
 using Lambda;
@@ -109,3 +110,4 @@ class TestNode
   }
 
 }
+#end
