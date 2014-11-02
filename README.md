@@ -209,7 +209,7 @@ class MyBehaviour extends unityengine.MonoBehaviour
 
   function Start():Void
   {
-    StartCoroutine(Generator.toEnumerator(run));
+    this.StartCoroutine(Generator.toEnumerator(run));
   }
 }
 ```
