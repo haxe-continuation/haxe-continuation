@@ -179,7 +179,7 @@ The output:
 
 ### Working with [Unity](http://unity3d.com/)
 
-You can use `@await` to create coroutine for Unity.
+You can use `@await` to create coroutines for Unity.
 
 ``` haxe
 // Must compile with `haxe -lib continuation -net-lib UnityEngine.dll`
