@@ -214,7 +214,7 @@ class MyBehaviour extends unityengine.MonoBehaviour
 }
 ```
 
-The code line `this.texture = @await downloadAvatar(yield);` shows that the things you can await are not only Unity built-in commands, but also your own asynchronous functions. Thus, `haxe-continuation` is more powerful than native C# coroutines.
+The expression `@await downloadAvatar(yield)` shows that the things you can await are not only Unity built-in commands, but also your own asynchronous functions. Thus, `haxe-continuation` is more powerful than native C# coroutines.
 
 ## Links
 
