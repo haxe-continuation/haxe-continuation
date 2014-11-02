@@ -192,23 +192,29 @@ class MyBehaviour extends unityengine.MonoBehaviour
 {
   
   var texture:unityengine.Texture2D;
-
-  @:async function run(yield:YieldFunction<Dynamic>):Void
+  
+  @:async function downloadAvatar(yield:YieldFunction<Dynamic>):unityengine.Texture2D
   {
     var url = "https://avatars3.githubusercontent.com/u/601530";
     var www = new unityengine.WWW(url);
     // Wait for download to complete
     @await yield(www);
-    // assign texture
-    this.texture = www.texture;
+    return www.texture;
   }
   
+  @:async function run(yield:YieldFunction<Dynamic>):Void
+  {
+    this.texture = @await downloadAvatar(yield);
+  }
+
   function Start():Void
   {
     StartCoroutine(Generator.toEnumerator(run));
   }
 }
 ```
+
+The code line `this.texture = @await downloadAvatar(yield);` shows that the things you can await is not only Unity built-in commands, but also your own asynchronous functions. Thus, `haxe-continuation` is more powerful than native C# coroutines.
 
 ## Links
 
