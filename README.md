@@ -1,7 +1,7 @@
 haxe-continuation
 =================
 
-<div align="right"><a href="https://travis-ci.org/Atry/haxe-continuation"><img alt="Build Status" src="https://travis-ci.org/Atry/haxe-continuation.png?branch=haxe-3"/></a></div>
+<div align="right"><a href="https://travis-ci.org/Atry/haxe-continuation"><img alt="Build Status" src="https://travis-ci.org/Atry/haxe-continuation.png?branch=haxe-3.1"/></a></div>
 
 An *asynchronous functions* is a function that accept its last parameter 
 as a callback function.
@@ -114,12 +114,12 @@ class Sample2
 ```
 
 
-See https://github.com/Atry/haxe-continuation/blob/haxe-3/tests/TestContinuation.hx
+See https://github.com/Atry/haxe-continuation/blob/haxe-3.1/tests/TestContinuation.hx
 for more examples.
 
 ### Working with [hx-node](https://github.com/cloudshift/hx-node)
 
-Look at https://github.com/Atry/haxe-continuation/blob/haxe-3/tests/TestNode.hx.
+Look at https://github.com/Atry/haxe-continuation/blob/haxe-3.1/tests/TestNode.hx.
 The example forks 5 threads, and calls Node.js's asynchronous functions in each thread.
 
 ### Generator
@@ -219,7 +219,7 @@ The expression `@await downloadAvatar(yield)` shows that the things you can awai
 ## Links
 
  * [haxe-continuation API documentation](http://atry.github.io/haxe-continuation/dox/com/dongxiguo/continuation/)
- * [Test cases and examples](https://github.com/Atry/haxe-continuation/tree/haxe-3/tests)
+ * [Test cases and examples](https://github.com/Atry/haxe-continuation/tree/haxe-3.1/tests)
 
 ## License
 
