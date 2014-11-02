@@ -177,6 +177,39 @@ The output:
     TestGenerator.hx:59: 9
     TestGenerator.hx:49: -------
 
+### Working with [Unity](http://unity3d.com/)
+
+You can use `@await` to create coroutine for Unity.
+
+``` haxe
+// Must compile with `haxe -lib continuation -net-lib UnityEngine.dll`
+
+import com.dongxiguo.continuation.utils.Generator;
+
+@:nativeGen
+@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
+class MyBehaviour extends unityengine.MonoBehaviour
+{
+  
+  var texture:unityengine.Texture2D;
+
+  @:async function run(yield:YieldFunction<Dynamic>):Void
+  {
+    var url = "https://avatars3.githubusercontent.com/u/601530";
+    var www = new unityengine.WWW(url);
+    // Wait for download to complete
+    @await yield(www);
+    // assign texture
+    this.texture = www.texture;
+  }
+  
+  function Start():Void
+  {
+    StartCoroutine(Generator.toEnumerator(run));
+  }
+}
+```
+
 ## Links
 
  * [haxe-continuation API documentation](http://atry.github.io/haxe-continuation/dox/com/dongxiguo/continuation/)
