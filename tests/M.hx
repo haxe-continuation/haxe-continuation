@@ -13,7 +13,7 @@ class M
     return self;
   }
 
-  @:macro
+  macro
   public static function m(e:Expr):Expr
   {
     return macro $e();

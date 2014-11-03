@@ -9,7 +9,7 @@ class TestMacro
 
   static function main():Void
   {
-    com.dongxiguo.continuation.Continuation.cpsFunction(function() @await M.m());
+    var f = com.dongxiguo.continuation.Continuation.cpsFunction(function() @await M.m());
   }
 
 }
