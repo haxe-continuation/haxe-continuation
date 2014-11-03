@@ -1,7 +1,7 @@
 haxe-continuation
 =================
 
-<div align="right"><a href="https://travis-ci.org/Atry/haxe-continuation"><img alt="Build Status" src="https://travis-ci.org/Atry/haxe-continuation.png?branch=haxe-3"/></a></div>
+<div align="right"><a href="https://travis-ci.org/Atry/haxe-continuation"><img alt="Build Status" src="https://travis-ci.org/Atry/haxe-continuation.png?branch=haxe-3.1"/></a></div>
 
 An *asynchronous functions* is a function that accept its last parameter 
 as a callback function.
@@ -114,12 +114,12 @@ class Sample2
 ```
 
 
-See https://github.com/Atry/haxe-continuation/blob/haxe-3/tests/TestContinuation.hx
+See https://github.com/Atry/haxe-continuation/blob/haxe-3.1/tests/TestContinuation.hx
 for more examples.
 
 ### Working with [hx-node](https://github.com/cloudshift/hx-node)
 
-Look at https://github.com/Atry/haxe-continuation/blob/haxe-3/tests/TestNode.hx.
+Look at https://github.com/Atry/haxe-continuation/blob/haxe-3.1/tests/TestNode.hx.
 The example forks 5 threads, and calls Node.js's asynchronous functions in each thread.
 
 ### Generator
@@ -177,10 +177,49 @@ The output:
     TestGenerator.hx:59: 9
     TestGenerator.hx:49: -------
 
+### Working with [Unity](http://unity3d.com/)
+
+You can use `@await` to create coroutines for Unity.
+
+``` haxe
+// Must compile with `haxe -lib continuation -net-lib UnityEngine.dll`
+
+import com.dongxiguo.continuation.utils.Generator;
+
+@:nativeGen
+@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
+class MyBehaviour extends unityengine.MonoBehaviour
+{
+  
+  var texture:unityengine.Texture2D;
+  
+  @:async function downloadAvatar(yield:YieldFunction<Dynamic>):unityengine.Texture2D
+  {
+    var url = "https://avatars3.githubusercontent.com/u/601530";
+    var www = new unityengine.WWW(url);
+    // Wait for download to complete
+    @await yield(www);
+    return www.texture;
+  }
+  
+  @:async function run(yield:YieldFunction<Dynamic>):Void
+  {
+    this.texture = @await downloadAvatar(yield);
+  }
+
+  function Start():Void
+  {
+    this.StartCoroutine(Generator.toEnumerator(run));
+  }
+}
+```
+
+The expression `@await downloadAvatar(yield)` shows that the things you can await are not only Unity built-in instructions, but also your own asynchronous functions. Thus, `haxe-continuation` is more powerful than Unity's native C# coroutines.
+
 ## Links
 
  * [haxe-continuation API documentation](http://atry.github.io/haxe-continuation/dox/com/dongxiguo/continuation/)
- * [Test cases and examples](https://github.com/Atry/haxe-continuation/tree/haxe-3/tests)
+ * [Test cases and examples](https://github.com/Atry/haxe-continuation/tree/haxe-3.1/tests)
 
 ## License
 
