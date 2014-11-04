@@ -47,16 +47,39 @@ class TestForkMeta
     #end
   }
 
+  /** Start 4 worker threads. Every worker is a collector. */
+  @:cps public static function startWorkerThreads(parentId:Int, childrenIds:Array<Int>):Array<Int>
+  {
+    trace("Before fork");
+    var result =
+    [
+      @fork(threadId in childrenIds)
+      {
+        trace("Start sub-thread #" + parentId + "." + threadId);
+
+        trace("Sub-thread #" + parentId + "." + threadId + " is going to sleep.");
+        @await sleep(Std.int(Math.random() * 5000.0));
+        trace("Sub-thread #" + parentId + "." + threadId + " is waken up.");
+
+        trace("Collecting data from sub-thread #" + parentId + "." + threadId + "...");
+
+        threadId * parentId;
+      }
+    ];
+    trace("All sub-threads of #" + parentId + " are joined.");
+    return result;
+  }
 
   /** Start 4 manager threads. Every manager manages 6 workers. */
-  @:cps public static function forkManagerThreads():Void
+  @:cps public static function startManagerThreads():Void
   {
     var threadIds = [ 0, 1, 2, 3 ];
+    trace("Before fork");
     @fork(threadId in threadIds)
     {
       trace("Start thread #" + threadId);
 
-      trace("Data from sub-threads of #" + threadId + ": " + Std.string(cast { @await sleep(1); 1; } ));
+      trace("Data from sub-threads of #" + threadId + ": " + Std.string(@await startWorkerThreads(threadId, [0, 1, 2, 3, 4, 5])));
 
       trace("Joining thread #" + threadId + "...");
     }
@@ -65,7 +88,7 @@ class TestForkMeta
 
   public static function main()
   {
-    forkManagerThreads(function() { trace("All tests are done."); } );
+    startManagerThreads(function() { trace("All tests are done."); } );
     trace("All threads are started.");
   }
 

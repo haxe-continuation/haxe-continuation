@@ -1,5 +1,5 @@
 -cp .
 -js bin/TestForkMeta.js
--D dump=pretty
+-D 
 -main tests.TestForkMeta
 --no-opt

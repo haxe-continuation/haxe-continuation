@@ -497,7 +497,7 @@ class ContinuationDetail
       {
         return transformAwait(functionExpr, params, rest);
       }
-      case EMeta({ name: "fork", params: [ { expr: EIn( { expr: EConst(CIdent(i)) }, idendifiers) } ] }, forkBody):
+      case EMeta({ name: "fork", params: [ { expr: EIn( { expr: EConst(CIdent(variableName)) }, idendifiers) } ] }, forkBody):
       {
         var afterForkExpr = rest([]);
         var transformedBody = transformNoDelay(forkBody, IGNORE, function(exprs) return 
@@ -510,12 +510,12 @@ class ContinuationDetail
           var __iterator = com.dongxiguo.continuation.Continuation.ContinuationDetail.toIterator($idendifiers);
           if (com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext($idendifiers, __iterator))
           {
-            var counter = 1;
-            function __checkCounter():Void if (--counter == 0) $afterForkExpr;
+            var __counter = 1;
+            function __checkCounter():Void if (--__counter == 0) $afterForkExpr;
             do
             {
-              counter++;
-              var $i = com.dongxiguo.continuation.Continuation.ContinuationDetail.next($idendifiers, __iterator);
+              var $variableName = com.dongxiguo.continuation.Continuation.ContinuationDetail.next($idendifiers, __iterator);
+              __counter++;
               $transformedBody;
             }
             while (com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext($idendifiers, __iterator));
@@ -1378,7 +1378,6 @@ class ContinuationDetail
         {
           if (i == exprs.length - 1)
           {
-            trace(haxe.macro.ExprTools.toString(exprs[i]), parameterRequirement);
             return transform(exprs[i], parameterRequirement, rest);
           }
           else
@@ -1428,6 +1427,111 @@ class ContinuationDetail
                     ]);
                 });
               });
+          }
+        }
+      }
+      case EArrayDecl(
+        [
+          {
+            expr: EMeta(
+              { name: "fork", params: [ { expr: EIn( { expr: EConst(CIdent(variableName)) }, idendifiers) } ] },
+              forkBody)
+          }
+        ]):
+      {
+        var toIteratorExpr =
+        {
+          expr: ECall(
+            macro com.dongxiguo.continuation.Continuation.ContinuationDetail.toIterator,
+            [ idendifiers ]),
+          pos: Context.currentPos(),
+        }
+        var hasNextExpr =
+        {
+          expr: ECall(
+            macro com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext,
+            [ idendifiers, macro __iterator ]),
+          pos: Context.currentPos(),
+        }
+        var nextExpr =
+        {
+          expr: ECall(
+            macro com.dongxiguo.continuation.Continuation.ContinuationDetail.next,
+            [ idendifiers, macro __iterator ]),
+          pos: Context.currentPos(),
+        }
+        switch (unblock(forkBody))
+        {
+          case { expr: EIf(econd, eif, null) }:
+          {
+            var afterForkExpr = rest([ macro __results ]);
+            var transformedBody = transformNoDelay(eif, EXACT(1), function(exprs)
+            {
+              var elementExpr = unpack(exprs, eif.pos);
+              return macro
+              {
+                __results[__index] = $elementExpr;
+                __checkCounter();
+              }
+            });
+            return macro
+            {
+              var __iterator = com.dongxiguo.continuation.Continuation.ContinuationDetail.toIterator($idendifiers);
+              if (com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext($idendifiers, __iterator))
+              {
+                var __results = [];
+                var __counter = 1;
+                var __i = 0;
+                function __checkCounter():Void if (--__counter == 0) $afterForkExpr;
+                do
+                {
+                  var $variableName = com.dongxiguo.continuation.Continuation.ContinuationDetail.next($idendifiers, __iterator);
+                  if ($econd)
+                  {
+                    var __index = __i;
+                    __counter++;
+                    $transformedBody;
+                    __i++;
+                  }
+                }
+                while (com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext($idendifiers, __iterator));
+                __checkCounter();
+              }
+            };
+          }
+          default:
+          {
+            var afterForkExpr = rest([ macro __results ]);
+            var transformedBody = transformNoDelay(forkBody, EXACT(1), function(exprs)
+            {
+              var elementExpr = unpack(exprs, forkBody.pos);
+              return macro
+              {
+                __results[__index] = $elementExpr;
+                __checkCounter();
+              }
+            });
+            return macro
+            {
+              var __iterator = com.dongxiguo.continuation.Continuation.ContinuationDetail.toIterator($idendifiers);
+              if (com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext($idendifiers, __iterator))
+              {
+                var __results = [];
+                var __counter = 1;
+                var __i = 0;
+                function __checkCounter():Void if (--__counter == 0) $afterForkExpr;
+                do
+                {
+                  var $variableName = com.dongxiguo.continuation.Continuation.ContinuationDetail.next($idendifiers, __iterator);
+                  var __index = __i;
+                  __counter++;
+                  $transformedBody;
+                  __i++;
+                }
+                while (com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext($idendifiers, __iterator));
+                __checkCounter();
+              }
+            };
           }
         }
       }
