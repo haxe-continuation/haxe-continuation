@@ -135,7 +135,7 @@ class Sample
   {
     var output:Array<haxe.io.Bytes> =
     [
-      // start a separate "thread" for each element in the array
+      // start a separate "thread" for each element in `files` array
       @fork(file in files)
       {
         // the code block executed by each "thread"
