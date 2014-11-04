@@ -493,26 +493,39 @@ class ContinuationDetail
   {
     switch (origin.expr)
     {
+      case EMeta({ name: "await", params: [] }, { expr: ECall(functionExpr, params) }):
+      {
+        return transformAwait(functionExpr, params, rest);
+      }
+      case EMeta({ name: "fork", params: [ { expr: EIn( { expr: EConst(CIdent(i)) }, idendifiers) } ] }, forkBody):
+      {
+        var afterForkExpr = rest([]);
+        var transformedBody = transformNoDelay(forkBody, IGNORE, function(exprs) return 
+        {
+          expr: EBlock(exprs.concat([macro __checkCounter()])),
+          pos: origin.pos,
+        });
+        return macro
+        {
+          var __iterator = com.dongxiguo.continuation.Continuation.ContinuationDetail.toIterator($idendifiers);
+          if (com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext($idendifiers, __iterator))
+          {
+            var counter = 1;
+            function __checkCounter():Void if (--counter == 0) $afterForkExpr;
+            do
+            {
+              counter++;
+              var $i = com.dongxiguo.continuation.Continuation.ContinuationDetail.next($idendifiers, __iterator);
+              $transformedBody;
+            }
+            while (com.dongxiguo.continuation.Continuation.ContinuationDetail.hasNext($idendifiers, __iterator));
+            __checkCounter();
+          }
+        };
+      }
       case EMeta(s, e):
       {
-        switch (e.expr)
-        {
-          case ECall(functionExpr, params):
-          {
-            if (s.name == "await" && s.params.empty())
-            {
-              return transformAwait(functionExpr, params, rest);
-            }
-            else
-            {
-              return rest([origin]);
-            }
-          }
-          default:
-          {
-            return rest([origin]);
-          }
-        }
+        return rest([origin]);
       }
       case EWhile(econd, e, normalWhile):
       {
@@ -1365,17 +1378,17 @@ class ContinuationDetail
         {
           if (i == exprs.length - 1)
           {
+            trace(haxe.macro.ExprTools.toString(exprs[i]), parameterRequirement);
             return transform(exprs[i], parameterRequirement, rest);
           }
           else
           {
             return transform(exprs[i], IGNORE, function(transformedLine)
             {
-              transformedLine.push(transformNext(i + 1));
               return
               {
                 pos: origin.pos,
-                expr: EBlock(transformedLine),
+                expr: EBlock(transformedLine.concat([transformNext(i + 1)])),
               }
             });
           }
