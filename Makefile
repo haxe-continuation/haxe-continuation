@@ -16,37 +16,37 @@ clean:
 
 test: \
 bin/TestContinuation.n bin/TestContinuation.swf bin/TestContinuation.js \
-bin/TestForkJoin_java bin/TestForkJoin_cs bin/TestForkJoin.swf bin/TestForkJoin.js \
+bin/TestForkMeta_java bin/TestForkMeta_cs bin/TestForkMeta.swf bin/TestForkMeta.js \
 bin/Sample.swf bin/Sample.js bin/Sample_cs bin/Sample_java \
 bin/TestNode.js
 
-bin/TestForkJoin_cs: \
+bin/TestForkMeta_cs: \
 com/dongxiguo/continuation/Continuation.hx \
 com/dongxiguo/continuation/utils/ForkJoin.hx \
-tests/TestForkJoin.hx \
+tests/TestForkMeta.hx \
 | bin
-	haxe -cs $@ -main tests.TestForkJoin
+	haxe -cs $@ -main tests.TestForkMeta
 
-bin/TestForkJoin_java: \
+bin/TestForkMeta_java: \
 com/dongxiguo/continuation/Continuation.hx \
 com/dongxiguo/continuation/utils/ForkJoin.hx \
-tests/TestForkJoin.hx \
+tests/TestForkMeta.hx \
 | bin
-	haxe -java $@ -main tests.TestForkJoin
+	haxe -java $@ -main tests.TestForkMeta
 
-bin/TestForkJoin.swf: \
+bin/TestForkMeta.swf: \
 com/dongxiguo/continuation/Continuation.hx \
 com/dongxiguo/continuation/utils/ForkJoin.hx \
-tests/TestForkJoin.hx \
+tests/TestForkMeta.hx \
 | bin
-	haxe -swf $@ -main tests.TestForkJoin
+	haxe -swf $@ -main tests.TestForkMeta
 
-bin/TestForkJoin.js: \
+bin/TestForkMeta.js: \
 com/dongxiguo/continuation/Continuation.hx \
 com/dongxiguo/continuation/utils/ForkJoin.hx \
-tests/TestForkJoin.hx \
+tests/TestForkMeta.hx \
 | bin
-	haxe -js $@ -main tests.TestForkJoin
+	haxe -js $@ -main tests.TestForkMeta
 
 bin/TestContinuation.n: \
 com/dongxiguo/continuation/Continuation.hx \

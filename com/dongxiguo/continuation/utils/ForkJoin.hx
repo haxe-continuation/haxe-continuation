@@ -67,6 +67,7 @@ class ForkJoin
   /**
     Like `ForkJoin.startThreads`, but returns a `CollectFunction` instead of `JoinFunction`.
    **/
+  @:deprecated("Use `[ @fork(v in collectorIdentifiers) handler(v) ]` instead!")
   @:noUsing
   public static function startCollectors<Identifier, Result>(
     collectorIdentifiers: Iterable<Identifier>,
@@ -118,6 +119,7 @@ class ForkJoin
     The `handler` can receive two parameters:
     the element in `threadIdentifiers` and the `JoinFunction`.
    **/
+  @:deprecated("Use `@fork(v in collectorIdentifiers) handler(v)` instead!")
   @:noUsing
   public static function startThreads<Identifier>(
     threadIdentifiers: Iterable<Identifier>,
