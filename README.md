@@ -131,7 +131,7 @@ An example fork:
 @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
 class Sample
 {
-  @:async function concatFilesInAnyOrder(files:Array<String>):Array<haxe.io.Bytes>
+  @:async function loadAllFiles(files:Array<String>):Array<haxe.io.Bytes>
   {
     var output:Array<haxe.io.Bytes> =
     [
