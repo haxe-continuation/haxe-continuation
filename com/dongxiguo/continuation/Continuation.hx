@@ -1646,6 +1646,10 @@ class ContinuationDetail
   {
     switch (Context.follow(Context.typeof(iterable)))
     {
+      case TInst(_.get() => { module: "Array", name: "Array" }, _):
+      {
+        return macro $iterable[$iterator++];
+      }
       case TAbstract(_.get() => a, _) if (hasArrayAccess(a) && hasLength(a)):
       {
         return macro $iterable[$iterator++];
@@ -1663,6 +1667,10 @@ class ContinuationDetail
   {
     switch (Context.follow(Context.typeof(iterable)))
     {
+      case TInst(_.get() => { module: "Array", name: "Array" }, _):
+      {
+        return macro $iterator < $iterable.length;
+      }
       case TAbstract(_.get() => a, _) if (hasArrayAccess(a) && hasLength(a)):
       {
         return macro $iterator < $iterable.length;
@@ -1680,6 +1688,10 @@ class ContinuationDetail
   {
     switch (Context.follow(Context.typeof(iterable)))
     {
+      case TInst(_.get() => { module: "Array", name: "Array" }, _):
+      {
+        return macro 0;
+      }
       case TAbstract(_.get() => a, _) if (hasArrayAccess(a) && hasLength(a)):
       {
         return macro 0;
