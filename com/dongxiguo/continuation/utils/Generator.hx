@@ -66,73 +66,59 @@ class Generator<Element>
 
   public function next():Null<Element>
   {
-    switch (this.status)
+    var oldStatus;
+    var newStatus = this.status;
+    do
     {
-      case UNKNOWN(fetchFunction):
+      oldStatus = newStatus;
+      switch (oldStatus)
       {
-        fetchFunction();
-        switch (this.status)
+        case UNKNOWN(fetchFunction):
         {
-          case NO_NEXT:
-          {
-            return null;
-          }
-          case HAS_NEXT(nextValue, fetchFunction):
-          {
-            this.status = UNKNOWN(fetchFunction);
-            return nextValue;
-          }
-          case UNKNOWN(_):
-          {
-            return throw "Expect yield or return.";
-          }
+          fetchFunction();
+          newStatus = this.status;
+        }
+        case NO_NEXT:
+        {
+          return null;
+        }
+        case HAS_NEXT(nextValue, fetchFunction):
+        {
+          this.status = UNKNOWN(fetchFunction);
+          return nextValue;
         }
       }
-      case NO_NEXT:
-      {
-        return null;
-      }
-      case HAS_NEXT(nextValue, fetchFunction):
-      {
-        this.status = UNKNOWN(fetchFunction);
-        return nextValue;
-      }
     }
-
+    while (oldStatus != newStatus);
+    return throw "Expect yield or return.";
   }
 
   public function hasNext():Bool
   {
-    switch (this.status)
+    var oldStatus;
+    var newStatus = this.status;
+    do
     {
-      case UNKNOWN(fetchFunction):
+      oldStatus = newStatus;
+      switch (oldStatus)
       {
-        fetchFunction();
-        switch (this.status)
+        case UNKNOWN(fetchFunction):
         {
-          case NO_NEXT:
-          {
-            return false;
-          }
-          case HAS_NEXT(_, _):
-          {
-            return true;
-          }
-          case UNKNOWN(_):
-          {
-            return throw "Expect yield or return.";
-          }
+          fetchFunction();
+          newStatus = this.status;
+        }
+        case NO_NEXT:
+        {
+          return false;
+        }
+        case HAS_NEXT(_, _):
+        {
+          return true;
         }
       }
-      case NO_NEXT:
-      {
-        return false;
-      }
-      case HAS_NEXT(_, _):
-      {
-        return true;
-      }
     }
+    while (oldStatus != newStatus);
+    return throw "Expect yield or return.";
   }
 
   public static function iterator<Element>(
