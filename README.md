@@ -117,6 +117,37 @@ class Sample2
 See https://github.com/Atry/haxe-continuation/blob/haxe-3.1/tests/TestContinuation.hx
 for more examples.
 
+### Forking
+
+Another feature in **haxe-continuation** is *forking*.
+The analogy to multithreaded code is instead of processing a list of items serially (one after the other),
+you start a thread for each item, and wait for all threads to return.
+This can increase performance by issuing several blocking calls at once,
+and serving each one as soon as the results are available. 
+
+An example fork:
+
+``` haxe
+@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
+class Sample
+{
+  @:async function loadAllFiles(files:Array<String>):Array<haxe.io.Bytes>
+  {
+    var output:Array<haxe.io.Bytes> =
+    [
+      // start a separate "thread" for each element in `files` array
+      @fork(file in files)
+      {
+        // the code block executed by each "thread"
+        @await loadFile(file);
+      }
+    ]
+    // at this point, all threads have finished executing.
+    return output;
+  }
+}
+```
+
 ### Working with [hx-node](https://github.com/cloudshift/hx-node)
 
 Look at https://github.com/Atry/haxe-continuation/blob/haxe-3.1/tests/TestNode.hx.

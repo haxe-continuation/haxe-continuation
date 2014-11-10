@@ -39,7 +39,7 @@ class Generator<Element>
 
   public function new(runFunction:RunFunction<Element>)
   {
-    this.status = UNKNOWN(runFunction.bind(this.yield, this.end));
+    this.status = UNKNOWN(runFunction.bind(this.yield.bind(), this.end.bind()));
   }
 
   function end():Void
