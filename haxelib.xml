@@ -12,5 +12,5 @@
 	<tag v="neko"/>
 	<tag v="php"/>
 	<description>Enable continuation in Haxe</description>
-	<version name="1.3.0"><ul><li>Support array comprehension;</li><li>Support <code>for</code> loop for <code>haxe.ds.Vector</code>;</li><li>Do not support Haxe 2 any more.</li></ul></version>
+	<version name="1.3.1"><ul><li>Enhance performance for Java/C# targets;</li><li>Support <code>@fork</code>;</li><li>Deprecate <code>ForkJoin.startThreads</code> and <code>ForkJoin.startCollectors</code>.</li></ul></version>
 </project>
