@@ -364,7 +364,7 @@ class ContinuationDetail
             {
               case TFun(args, _):
               {
-                switch (args[args.length - 1].t)
+                switch (Context.follow(args[args.length - 1].t))
                 {
                   case TFun(args, _):
                   {
@@ -500,7 +500,7 @@ class ContinuationDetail
       case EMeta({ name: "fork", params: [ { expr: EIn( { expr: EConst(CIdent(variableName)) }, idendifiers) } ] }, forkBody):
       {
         var afterForkExpr = rest([]);
-        var transformedBody = transformNoDelay(forkBody, IGNORE, function(exprs) return 
+        var transformedBody = transformNoDelay(forkBody, IGNORE, function(exprs) return
         {
           expr: EBlock(exprs.concat([macro __checkCounter()])),
           pos: origin.pos,

@@ -34,12 +34,21 @@ import haxe.ds.Vector;
 
 using com.dongxiguo.continuation.Continuation;
 
+typedef TwoParametersFunction = Int->String->Void;
+
 /**
  * @author 杨博
  */
 @:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":cps"))
 class TestContinuation
 {
+  static function twoReturnValues(handler:TwoParametersFunction):Void { }
+
+  @:cps static function testTwoReturnValues():Void
+  {
+    var i, j = @await twoReturnValues();
+  }
+
   @:cps static function ifNull(?p:Int)
   {
     if (p == null)
