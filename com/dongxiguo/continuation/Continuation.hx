@@ -1083,7 +1083,19 @@ class ContinuationDetail
       }
       case EParenthesis(e):
       {
-        return transformNoDelay(e, parameterRequirement, rest);
+        return transformNoDelay(
+          e,
+          EXACT(1),
+          function(transformedExprs)
+          {
+            return rest(
+              [
+                {
+                  pos: origin.pos,
+                  expr: EParenthesis(unpack(transformedExprs, origin.pos)),
+                },
+              ]);
+          });
       }
       case EObjectDecl(originFields):
       {
