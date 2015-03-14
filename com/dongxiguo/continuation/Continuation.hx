@@ -1384,7 +1384,7 @@ class ContinuationDetail
       {
         if (exprs.length == 0)
         {
-          return rest([]);
+          return rest([origin]);
         }
         function transformNext(i:Int):Expr
         {
