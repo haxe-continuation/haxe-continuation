@@ -575,6 +575,7 @@ class ContinuationDetail
         {
           return macro
           {
+            var __doCount = 0;
             function $inlineBreakName():Void
             {
               $breakBody;
@@ -591,7 +592,15 @@ class ContinuationDetail
                 {
                   $continueIdent();
                 }
-                $doBody;
+                if (__doCount++ == 0)
+                {
+                  // Check reenter;
+                  do
+                  {
+                    $doBody;
+                  }
+                  while (--__doCount != 0);
+                }
               }
               $continueBody;
             }
@@ -607,6 +616,7 @@ class ContinuationDetail
           #end
           return macro
           {
+            var __doCount = 0;
             function $inlineBreakName():Void
             {
               $breakBody;
@@ -625,7 +635,15 @@ class ContinuationDetail
               {
                 $continueIdent();
               }
-              $doBody;
+              if (__doCount++ == 0)
+              {
+                // Check reenter;
+                do
+                {
+                  $doBody;
+                }
+                while (--__doCount != 0);
+              }
             }
             __do();
           }
