@@ -36,7 +36,8 @@ import haxe.Timer;
 class Sleep
 {
 
-  public static inline function sleep(ms:Int, f:Void->Void):Void {
+  public static inline function sleep(ms:Int, f:Void->Void):Void
+  {
     Timer.delay(f, ms);
   }
 
