@@ -454,7 +454,7 @@ class ContinuationDetail
     parameterRequirement:ParameterRequirement,
     rest:Array<Expr>->Expr):Expr
   {
-    var wrapper = new Wrapper(parameterRequirement, rest, false);
+    var wrapper = new Wrapper(parameterRequirement, rest, false, "__endIf_");
     return transformNoDelay(
       econd,
       EXACT(1),
@@ -969,7 +969,7 @@ class ContinuationDetail
       }
       case ESwitch(e, cases, edef):
       {
-        var wrapper = new Wrapper(parameterRequirement, rest);
+        var wrapper = new Wrapper(parameterRequirement, rest, false, "__endSwitch_");
         return transformNoDelay(e, EXACT(1), function(eResult)
         {
           function transformGuard(guard:Null<Expr>):Expr
@@ -1947,8 +1947,8 @@ private class Wrapper
   public function new(
     parameterRequirement:ParameterRequirement,
     rest:Array<Expr>->Expr,
-    // 如果不指定isInline，默认值由no_inline预定义变量决定是否内联
-    isInline:Bool = #if no_inline false #else true #end)
+    isInline:Bool,
+    prefix:String)
   {
     switch (parameterRequirement)
     {
@@ -1962,7 +1962,7 @@ private class Wrapper
         this.invocation = rest;
       }
       case IGNORE:
-        var functionName = "__wrapper_" + Std.string(seed++);
+        var functionName = prefix + Std.string(seed++);
         if (isInline)
         {
           this.declearation = declearWrapper("inline_" + functionName, 0, rest);
@@ -1991,7 +1991,7 @@ private class Wrapper
           };
         };
       case EXACT(numParameters):
-        var functionName = "__wrapper_" + Std.string(seed++);
+        var functionName = prefix + Std.string(seed++);
         #if no_inline
           this.declearation = declearWrapper(functionName, numParameters, rest);
         #else
