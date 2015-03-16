@@ -35,7 +35,7 @@ class ForkJoin
   /**
     Hangs up the current thread.
 
-    Usage: `return ForkJoin.hang().async();`
+    Usage: `return @await ForkJoin.hang();`
   **/
   @:noUsing
   @:extern
@@ -47,7 +47,7 @@ class ForkJoin
     Forks the current thread.
 
     Usage:
-    <pre>`if (ForkJoin.fork().async())
+    <pre>`if (@await ForkJoin.fork())
     {
       // Forked thread #1
     }
