@@ -35,11 +35,13 @@ package com.dongxiguo.continuation.utils;
 class Tuple
 {
 
+  @:noUsing
   public static inline function pair<A0, A1>(a0:A0, a1:A1, callback:A0->A1->Void):Void
   {
     callback(a0, a1);
   }
 
+  @:noUsing
   public static inline function triple<A0, A1, A2>(a0:A0, a1:A1, a2:A2, callback:A0->A1->A2->Void):Void
   {
     callback(a0, a1, a2);
