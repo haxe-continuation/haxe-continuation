@@ -1,6 +1,8 @@
 haxe-continuation
 =================
 
+[![Join the chat at https://gitter.im/Atry/haxe-continuation](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Atry/haxe-continuation?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 <div align="right"><a href="https://travis-ci.org/Atry/haxe-continuation"><img alt="Build Status" src="https://travis-ci.org/Atry/haxe-continuation.png?branch=haxe-3.1"/></a></div>
 
 An *asynchronous functions* is a function that accept its last parameter 
