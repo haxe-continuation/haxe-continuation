@@ -80,6 +80,25 @@ async functions. When calling an asynchronous function with the `@await` prefix,
 function. Instead, the code after `@await` will be captured as the callback
 function for the callee.
 
+Then we could compile it to JavaScript and run in Node.js:
+
+```
+$ haxe -main Sample -js Sample.js -lib continuation && node Sample.js
+Start continuation.
+Run sleepOneSecond 0 times.
+Run sleepOneSecond 1 times.
+Run sleepOneSecond 2 times.
+Run sleepOneSecond 3 times.
+Run sleepOneSecond 4 times.
+Run sleepOneSecond 5 times.
+Run sleepOneSecond 6 times.
+Run sleepOneSecond 7 times.
+Run sleepOneSecond 8 times.
+Run sleepOneSecond 9 times.
+Continuation is done.
+Handler without continuation.
+```
+
 Another way is using `Continuation.cpsFunction` macro to write nested CPS functions:
 
 ``` haxe
