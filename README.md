@@ -191,14 +191,14 @@ class Sample
   {
     var output:Array<haxe.io.Bytes> =
     [
-      // start a separate "thread" for each element in `files` array
+      // Start a separate "thread" for each element in `files` array
       @fork(file in files)
       {
-        // the code block executed by each "thread"
+        // The code block executed by each "thread"
         @await loadFile(file);
       }
-    ]
-    // at this point, all threads have finished executing.
+    ];
+    // At this point, all sub-threads have finished executing.
     return output;
   }
 }
