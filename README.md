@@ -80,7 +80,7 @@ async functions. When calling an asynchronous function with the `@await` prefix,
 function. Instead, the code after `@await` will be captured as the callback
 function for the callee.
 
-Then we could compile it to JavaScript and run in Node.js:
+Then we could compile it to JavaScript and run it in Node.js:
 
 ```
 $ haxe -main Sample -js Sample.js -lib continuation && node Sample.js
