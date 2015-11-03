@@ -35,13 +35,13 @@ using Lambda;
 /**
  * @author 杨博
  */
-@:build(com.dongxiguo.continuation.Continuation.cpsByMeta("cps"))
+@:build(com.dongxiguo.continuation.Continuation.cpsByMeta(":async"))
 class TestNode
 {
   /**
    * Writes <code>content</code> to <code>fd</code>.
    */
-  @cps static function writeAll(fd:Int, content:String):Null<NodeErr>
+  @:async static function writeAll(fd:Int, content:String):Null<NodeErr>
   {
     var totalWritten = 0;
     while (totalWritten < content.length)
@@ -62,7 +62,7 @@ class TestNode
   /**
    * Creates a directory named "TestNode", and concurrently put 5 files into it.
    */
-  @cps static function startTest():Void
+  @:async static function startTest():Void
   {
     var err = @await Node.fs.mkdir("TestNode");
     if (err != null)
