@@ -19,6 +19,19 @@ bin/TestContinuation.n bin/TestContinuation.swf bin/TestContinuation.js bin/Test
 bin/TestForkMeta_java bin/TestForkMeta_cs bin/TestForkMeta.swf bin/TestForkMeta.js \
 bin/Sample.swf bin/Sample.js bin/Sample_cs bin/Sample_java bin/Sample_cpp \
 bin/TestNode.js
+	neko bin/TestContinuation.n
+	node bin/TestContinuation.js
+	bin/TestContinuation_cpp/TestContinuation
+	java -jar bin/TestForkMeta_java/TestForkMeta.jar
+	mono bin/TestForkMeta_cs/bin/TestForkMeta.exe
+	node bin/TestForkMeta.js
+	node bin/Sample.js
+	mono bin/Sample_cs/bin/Sample.exe
+	java -jar bin/Sample_java/Sample.jar 
+	bin/Sample_cpp/Sample
+	node bin/TestNode.js
+
+
 
 bin/TestForkMeta_cs: \
 com/dongxiguo/continuation/Continuation.hx \
