@@ -15,9 +15,9 @@ clean:
 	$(RM) -r bin release.zip haxedoc.xml haxelib.json
 
 test: \
-bin/TestContinuation.n bin/TestContinuation.swf bin/TestContinuation.js \
+bin/TestContinuation.n bin/TestContinuation.swf bin/TestContinuation.js bin/TestContinuation_cpp \
 bin/TestForkMeta_java bin/TestForkMeta_cs bin/TestForkMeta.swf bin/TestForkMeta.js \
-bin/Sample.swf bin/Sample.js bin/Sample_cs bin/Sample_java \
+bin/Sample.swf bin/Sample.js bin/Sample_cs bin/Sample_java bin/Sample_cpp \
 bin/TestNode.js
 
 bin/TestForkMeta_cs: \
@@ -47,6 +47,12 @@ com/dongxiguo/continuation/utils/ForkJoin.hx \
 tests/TestForkMeta.hx \
 | bin
 	haxe -js $@ -main tests.TestForkMeta
+
+bin/TestContinuation_cpp: \
+com/dongxiguo/continuation/Continuation.hx \
+tests/TestContinuation.hx \
+| bin
+	haxe -cpp $@ -main tests.TestContinuation
 
 bin/TestContinuation.n: \
 com/dongxiguo/continuation/Continuation.hx \
@@ -78,6 +84,13 @@ tests/Sample.hx \
 | bin
 	$(RM) -r $@
 	haxe -java $@ -main tests.Sample
+
+bin/Sample_cpp: \
+com/dongxiguo/continuation/Continuation.hx \
+tests/Sample.hx \
+| bin
+	$(RM) -r $@
+	haxe -cpp $@ -main tests.Sample
 
 bin/Sample_cs: \
 com/dongxiguo/continuation/Continuation.hx \

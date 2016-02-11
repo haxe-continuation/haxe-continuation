@@ -8,3 +8,4 @@ before_install:
  - travis_retry sudo haxelib install nodejs
  - travis_retry sudo haxelib install hxjava
  - travis_retry sudo haxelib install hxcs
+ - travis_retry sudo haxelib install hxcpp

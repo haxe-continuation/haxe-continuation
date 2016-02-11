@@ -37,10 +37,10 @@ class Sample
 {
   static function sleepOneSecond(handler:Void->Void):Void
   {
-    #if cs
-    handler();
-    #else
+    #if (swf || as3 || java || js || python)
     haxe.Timer.delay(handler, 1000);
+    #else
+    handler();
     #end
   }
   
@@ -74,10 +74,10 @@ class Sample2
 {
   static function sleepOneSecond(handler:Void->Void):Void
   {
-    #if cs
-    handler();
-    #else
+    #if (swf || as3 || java || js || python)
     haxe.Timer.delay(handler, 1000);
+    #else
+    handler();
     #end
   }
   @cps static function asyncTest():Void
