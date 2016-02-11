@@ -43,13 +43,14 @@ class TestNode
    */
   @:async static function writeAll(fd:Int, content:String):Null<NodeErr>
   {
+    var buffer = new NodeBuffer(content);
     var totalWritten = 0;
-    while (totalWritten < content.length)
+    while (totalWritten < buffer.length)
     {
       var err, written =
         @await Node.fs.write(
-          fd, content,
-          totalWritten, content.length - totalWritten, null);
+          fd, buffer,
+          totalWritten, buffer.length - totalWritten, null);
       if (err != null)
       {
         return err;
