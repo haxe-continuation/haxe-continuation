@@ -14,6 +14,7 @@ body, html { height:100%; padding:0px !important; overflow:hidden; }
 .related-types .toggle-hide { padding-top:4px; }
 .availability { margin-left:14px; color:#93a1a1; }
 .doc { margin-left:14px; }
+.viewsource { float:right; background:#f0f0f0; padding:4px 10px; border-radius: 4px; margin-top: 15px; }
 
 #nav li { list-style-type: none; }
 #nav .expando > ul { display:none; }
