@@ -39,7 +39,10 @@ class Sleep
   @:noUsing
   public static inline function sleep(ms:Int, f:Void->Void):Void
   {
+    #if doc_gen
+    #else
     Timer.delay(f, ms);
+    #end
   }
 
 }
