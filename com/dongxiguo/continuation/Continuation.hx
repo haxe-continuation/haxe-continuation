@@ -497,7 +497,7 @@ class ContinuationDetail
       {
         return transformAwait(functionExpr, params, rest);
       }
-      case EMeta({ name: "fork", params: [ { expr: EIn( { expr: EConst(CIdent(variableName)) }, idendifiers) } ] }, forkBody):
+      case EMeta({ name: "fork", params: [ { expr: EBinop(OpIn, { expr: EConst(CIdent(variableName)) }, idendifiers) } ] }, forkBody):
       {
         var afterForkExpr = rest([]);
         var transformedBody = transformNoDelay(forkBody, IGNORE, function(exprs) return
@@ -764,7 +764,29 @@ class ContinuationDetail
                       functionArgs;
                     },
                     ret: null,
-                    expr: rest([])
+                    expr:
+                    {
+                      pos: origin.pos,
+                      expr: EBlock(
+                        {
+                          var exprs = [];
+                          // Workaround for https://github.com/HaxeFoundation/haxe/issues/2069
+                          for (originVar in originVars)
+                          {
+                            exprs.push(
+                              {
+                                pos: origin.pos,
+                                expr: EConst(CIdent(originVar.name)),
+                              });
+                          }
+                          exprs.push(rest([]));
+                            //{
+                              //pos: origin.pos,
+                              //expr: EReturn(rest([])),
+                            //});
+                          exprs;
+                        }),
+                    }
                   }),
               },
             ]),
@@ -1164,7 +1186,7 @@ class ContinuationDetail
         }
         return transformNext(0, null);
       }
-      case EIn(_, _):
+      case EBinop(OpIn, _, _):
       {
         // Unsupported. Don't change it.
         return rest([origin]);
@@ -1181,7 +1203,7 @@ class ContinuationDetail
       {
         switch (it.expr)
         {
-          case EIn(e1, e2):
+          case EBinop(OpIn, e1, e2):
           {
             var elementName =
               switch (e1.expr)
@@ -1442,7 +1464,7 @@ class ContinuationDetail
         [
           {
             expr: EMeta(
-              { name: "fork", params: [ { expr: EIn( { expr: EConst(CIdent(variableName)) }, idendifiers) } ] },
+              { name: "fork", params: [ { expr: EBinop(OpIn, { expr: EConst(CIdent(variableName)) }, idendifiers) } ] },
               forkBody)
           }
         ]):
@@ -1548,11 +1570,11 @@ class ContinuationDetail
           {
             expr: EFor(
               {
-                expr: EIn(
+                expr: EBinop(OpIn,
                   {
                     expr: EConst(CIdent(elementName)),
                   },
-                  e2),
+                  e2)
               },
               expr),
           }
