@@ -305,7 +305,7 @@ The expression `@await downloadAvatar(yield)` shows that the things you can awai
 
 ## Links
 
- * [haxe-continuation API documentation](http://atry.github.io/haxe-continuation/dox/com/dongxiguo/continuation/)
+ * [haxe-continuation API documentation](http://haxe-continuation.github.io/haxe-continuation/dox/com/dongxiguo/continuation/)
  * [Test cases and examples](https://github.com/Atry/haxe-continuation/tree/haxe-3.1/tests)
 
 ## License
