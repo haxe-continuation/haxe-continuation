@@ -1125,7 +1125,7 @@ class ContinuationDetail
             [
               {
                 pos: origin.pos,
-                expr: EObjectDecl(toReverseArray(transformedFields)),
+                expr: EObjectDecl(cast toReverseArray(transformedFields)),
               }
             ]);
           }
@@ -1464,7 +1464,11 @@ class ContinuationDetail
         [
           {
             expr: EMeta(
+			        #if (haxe_ver >= "4.0.0")
               { name: "fork", params: [ { expr: EBinop(OpIn, { expr: EConst(CIdent(variableName)) }, idendifiers) } ] },
+              #else
+              { name: "fork", params: [ { expr: EIn( { expr: EConst(CIdent(variableName)) }, idendifiers) } ] },
+              #end
               forkBody)
           }
         ]):
