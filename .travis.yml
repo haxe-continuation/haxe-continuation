@@ -2,7 +2,7 @@ language: cpp
 
 before_install:
  - curl -sL https://deb.nodesource.com/setup_5.x | sudo -E bash -
- - travis_retry sudo add-apt-repository ppa:eyecreate/haxe -y
+ - travis_retry sudo add-apt-repository ppa:haxe/releases -y
  - travis_retry sudo apt-get update -qq
  - travis_retry sudo apt-get install -qq haxe neko ocaml mono-devel nodejs
  - travis_retry sudo haxelib setup .haxelib
