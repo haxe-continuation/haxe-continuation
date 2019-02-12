@@ -544,7 +544,7 @@ class ContinuationDetail
         var breakIdent =
         {
           pos: origin.pos,
-          expr: EConst(CIdent(breakName))
+          expr: EConst(CIdent(inlineBreakName))
         };
         var doBody = transform(e,
           IGNORE,
@@ -1700,7 +1700,7 @@ class ContinuationDetail
   }
 
   @:isVar
-  static var delayFunctions(get_delayFunctions, set_delayFunctions):Array<Void->Expr>;
+  static var delayFunctions(get, set):Array<Void->Expr>;
 
   static function set_delayFunctions(value:Array<Void->Expr>):Array<Void->Expr>
   {
