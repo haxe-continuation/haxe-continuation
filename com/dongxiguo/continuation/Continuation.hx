@@ -609,11 +609,11 @@ class ContinuationDetail
         }
         else
         {
-          #if no_inline
+          // #if no_inline
             var inlineContinueName = continueName;
-          #else
-            var inlineContinueName = "inline_" + continueName;
-          #end
+          // #else
+          //   var inlineContinueName = "inline_" + continueName;
+          // #end
           return macro
           {
             var __doCount = 0;
@@ -1996,11 +1996,12 @@ private class Wrapper
         };
       case EXACT(numParameters):
         var functionName = prefix + Std.string(seed++);
-        #if no_inline
+        // trace(functionName);
+        // #if no_inline
           this.declearation = declearWrapper(functionName, numParameters, rest);
-        #else
-          this.declearation = declearWrapper("inline_" + functionName, numParameters, rest);
-        #end
+        // #else
+          // this.declearation = declearWrapper("inline_" + functionName, numParameters, rest);
+        // #end
         this.invocation = function(parameters:Array<Expr>):Expr
         {
           return
