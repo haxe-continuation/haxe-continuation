@@ -1,7 +1,7 @@
 haxe-continuation
 =================
 
-[![Join the chat at https://gitter.im/Atry/haxe-continuation](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Atry/haxe-continuation?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Financial Contributors on Open Collective](https://opencollective.com/haxe-continuation/all/badge.svg?label=financial+contributors)](https://opencollective.com/haxe-continuation) [![Join the chat at https://gitter.im/Atry/haxe-continuation](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/Atry/haxe-continuation?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/Atry/haxe-continuation.svg?branch=haxe-3.1)](https://travis-ci.org/Atry/haxe-continuation)
 
 An *asynchronous functions* is a function that accept its last parameter 
@@ -307,6 +307,36 @@ The expression `@await downloadAvatar(yield)` shows that the things you can awai
 
  * [haxe-continuation API documentation](http://haxe-continuation.github.io/haxe-continuation/dox/com/dongxiguo/continuation/)
  * [Test cases and examples](https://github.com/Atry/haxe-continuation/tree/haxe-3.1/tests)
+
+## Contributors
+
+### Code Contributors
+
+This project exists thanks to all the people who contribute. [[Contribute](CONTRIBUTING.md)].
+<a href="https://github.com/haxe-continuation/haxe-continuation/graphs/contributors"><img src="https://opencollective.com/haxe-continuation/contributors.svg?width=890&button=false" /></a>
+
+### Financial Contributors
+
+Become a financial contributor and help us sustain our community. [[Contribute](https://opencollective.com/haxe-continuation/contribute)]
+
+#### Individuals
+
+<a href="https://opencollective.com/haxe-continuation"><img src="https://opencollective.com/haxe-continuation/individuals.svg?width=890"></a>
+
+#### Organizations
+
+Support this project with your organization. Your logo will show up here with a link to your website. [[Contribute](https://opencollective.com/haxe-continuation/contribute)]
+
+<a href="https://opencollective.com/haxe-continuation/organization/0/website"><img src="https://opencollective.com/haxe-continuation/organization/0/avatar.svg"></a>
+<a href="https://opencollective.com/haxe-continuation/organization/1/website"><img src="https://opencollective.com/haxe-continuation/organization/1/avatar.svg"></a>
+<a href="https://opencollective.com/haxe-continuation/organization/2/website"><img src="https://opencollective.com/haxe-continuation/organization/2/avatar.svg"></a>
+<a href="https://opencollective.com/haxe-continuation/organization/3/website"><img src="https://opencollective.com/haxe-continuation/organization/3/avatar.svg"></a>
+<a href="https://opencollective.com/haxe-continuation/organization/4/website"><img src="https://opencollective.com/haxe-continuation/organization/4/avatar.svg"></a>
+<a href="https://opencollective.com/haxe-continuation/organization/5/website"><img src="https://opencollective.com/haxe-continuation/organization/5/avatar.svg"></a>
+<a href="https://opencollective.com/haxe-continuation/organization/6/website"><img src="https://opencollective.com/haxe-continuation/organization/6/avatar.svg"></a>
+<a href="https://opencollective.com/haxe-continuation/organization/7/website"><img src="https://opencollective.com/haxe-continuation/organization/7/avatar.svg"></a>
+<a href="https://opencollective.com/haxe-continuation/organization/8/website"><img src="https://opencollective.com/haxe-continuation/organization/8/avatar.svg"></a>
+<a href="https://opencollective.com/haxe-continuation/organization/9/website"><img src="https://opencollective.com/haxe-continuation/organization/9/avatar.svg"></a>
 
 ## License
 
