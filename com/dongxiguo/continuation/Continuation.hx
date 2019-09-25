@@ -858,7 +858,7 @@ class ContinuationDetail
         {
           pos: origin.pos,
           expr: EFunction(
-            endTryName,
+            FNamed(endTryName),
             {
               ret: null,
               params: [],
@@ -1907,7 +1907,7 @@ private class Wrapper
     {
       pos: Context.currentPos(),
       expr: EFunction(
-        functionName,
+        FNamed(functionName),
         {
           args:
           {
