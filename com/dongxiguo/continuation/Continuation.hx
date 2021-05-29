@@ -1327,6 +1327,24 @@ class ContinuationDetail
               ]);
           });
       }
+      #if (haxe_ver >= "4.2")
+      case EIs(e, t):
+      {
+        return transformNoDelay(
+          e,
+          EXACT(1),
+          function(eResult)
+          {
+            return rest(
+              [
+                {
+                  pos: origin.pos,
+                  expr: EIs(unpack(eResult, e.pos), t)
+                }
+              ]);
+          });
+      }
+      #end
       case ECall(callExpr, originParams):
       {
         if (originParams.length == 0)
