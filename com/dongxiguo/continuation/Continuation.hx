@@ -1279,10 +1279,12 @@ class ContinuationDetail
               ]);
           });
       }
+      #if (haxe_ver < 4.3)
       case EDisplayNew(_):
       {
         return rest([origin]);
       }
+      #end
       case EDisplay(_, _):
       {
         return rest([origin]);
